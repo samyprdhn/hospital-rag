@@ -22,11 +22,9 @@
       align-items: center;
       gap: 12px;
     }
-
     header .logo { font-size: 22px; }
     header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
     header p { font-size: 12px; color: #64748b; margin-top: 1px; }
-
     .badge {
       margin-left: auto;
       background: #10b981;
@@ -39,7 +37,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 300px 1fr;
+      grid-template-columns: 310px 1fr;
       height: calc(100vh - 65px);
     }
 
@@ -51,23 +49,18 @@
       flex-direction: column;
       overflow: hidden;
     }
-
     .sidebar-section {
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid #1e293b;
     }
-
     .sidebar-section h2 {
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: #64748b;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-
-    /* LLM Selector */
-    .select-group { display: flex; flex-direction: column; gap: 8px; }
 
     select {
       width: 100%;
@@ -83,43 +76,65 @@
     }
     select:focus { border-color: #6366f1; }
 
-    .provider-status {
+    .select-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .status-row {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 12px;
       color: #64748b;
-      margin-top: 4px;
+      margin-top: 5px;
     }
-    .provider-status .dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #ef4444;
-      flex-shrink: 0;
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; flex-shrink: 0; }
+    .dot.ok { background: #10b981; }
+    .dot.local { background: #6366f1; }
+
+    /* Parser section */
+    .parser-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      font-size: 12px;
     }
-    .provider-status .dot.ok { background: #10b981; }
+    .parser-card .parser-name { font-weight: 600; color: #a5b4fc; margin-bottom: 3px; }
+    .parser-card .parser-desc { color: #94a3b8; line-height: 1.5; }
+    .parser-card .parser-badge {
+      display: inline-block;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 1px 8px;
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 5px;
+    }
+    .parser-card .parser-badge.free { border-color: #10b981; color: #4ade80; }
+    .parser-card .parser-badge.cloud { border-color: #6366f1; color: #a5b4fc; }
 
     /* Upload */
     .drop-zone {
       border: 2px dashed #334155;
       border-radius: 10px;
-      padding: 20px;
+      padding: 18px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
     }
-    .drop-zone:hover, .drop-zone.drag-over {
-      border-color: #6366f1;
-      background: #1e1b4b22;
-    }
-    .drop-zone input[type="file"] {
-      position: absolute; inset: 0;
-      opacity: 0; cursor: pointer;
-    }
-    .drop-zone .icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #6366f1; background: #1e1b4b22; }
+    .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .drop-zone .icon { font-size: 26px; margin-bottom: 6px; }
     .drop-zone p { font-size: 12px; color: #94a3b8; }
     .drop-zone p strong { color: #a5b4fc; }
+    .drop-zone .selected-file {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #4ade80;
+      font-weight: 500;
+    }
 
     .btn {
       width: 100%;
@@ -135,11 +150,7 @@
       justify-content: center;
       gap: 6px;
     }
-    .btn-primary {
-      background: #6366f1;
-      color: #fff;
-      margin-top: 10px;
-    }
+    .btn-primary { background: #6366f1; color: #fff; margin-top: 10px; }
     .btn-primary:hover { background: #4f46e5; }
     .btn-primary:disabled { background: #3730a3; opacity: 0.6; cursor: not-allowed; }
     .btn-danger {
@@ -165,12 +176,8 @@
     .status-msg.error { background: #2d0d0d; color: #f87171; border: 1px solid #7f1d1d; }
     .status-msg.info { background: #0c1a2e; color: #93c5fd; border: 1px solid #1e3a5f; }
 
-    /* Documents list */
-    .doc-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 16px;
-    }
+    /* Doc list */
+    .doc-list { flex: 1; overflow-y: auto; padding: 12px 16px; }
     .doc-list h2 {
       font-size: 11px;
       font-weight: 700;
@@ -190,16 +197,13 @@
       font-size: 12px;
     }
     .doc-item .doc-icon { font-size: 16px; flex-shrink: 0; }
-    .doc-item .doc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .doc-item .doc-chunks { color: #64748b; font-size: 11px; flex-shrink: 0; }
+    .doc-item .doc-info { flex: 1; min-width: 0; }
+    .doc-item .doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .doc-item .doc-meta { color: #64748b; font-size: 11px; margin-top: 2px; }
     .no-docs { color: #475569; font-size: 12px; text-align: center; padding: 20px 0; }
 
     /* MAIN */
-    .main {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .main { display: flex; flex-direction: column; overflow: hidden; }
 
     .chat-history {
       flex: 1;
@@ -247,11 +251,6 @@
       border-bottom-left-radius: 4px;
       border: 1px solid #334155;
     }
-    .bubble-meta {
-      font-size: 11px;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
 
     .sources-box {
       align-self: flex-start;
@@ -272,7 +271,6 @@
     .sources-box summary::-webkit-details-marker { display: none; }
     .sources-box summary::before { content: '▶ '; font-size: 10px; }
     .sources-box[open] summary::before { content: '▼ '; }
-
     .source-item {
       margin-top: 8px;
       padding: 8px 10px;
@@ -307,7 +305,6 @@
       40% { transform: translateY(-8px); }
     }
 
-    /* Query input bar */
     .query-bar {
       border-top: 1px solid #1e293b;
       padding: 16px 24px;
@@ -348,14 +345,6 @@
     .send-btn:hover { background: #4f46e5; }
     .send-btn:disabled { background: #3730a3; opacity: 0.6; cursor: not-allowed; }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-
-    .spinner { animation: spin 0.8s linear infinite; display: inline-block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
     .model-pill {
       display: inline-flex;
       align-items: center;
@@ -368,6 +357,13 @@
       color: #94a3b8;
       margin-bottom: 8px;
     }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    .spinner { animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -391,34 +387,52 @@
       <h2>LLM Provider</h2>
       <div class="select-group">
         <select id="providerSelect" onchange="onProviderChange()">
-          <option value="groq">Loading providers...</option>
+          <option>Loading...</option>
         </select>
         <select id="modelSelect">
-          <option value="">Select provider first</option>
+          <option>Select provider first</option>
         </select>
-        <div class="provider-status">
+        <div class="status-row">
           <span class="dot" id="providerDot"></span>
           <span id="providerStatusText">Checking...</span>
         </div>
       </div>
     </div>
 
+    <!-- Parser Selector -->
+    <div class="sidebar-section">
+      <h2>Document Parser</h2>
+      <div class="select-group">
+        <select id="parserSelect" onchange="onParserChange()">
+          <option>Loading...</option>
+        </select>
+        <div class="status-row">
+          <span class="dot" id="parserDot"></span>
+          <span id="parserStatusText">Checking...</span>
+        </div>
+      </div>
+      <div id="parserCard" class="parser-card" style="display:none"></div>
+    </div>
+
     <!-- Upload -->
     <div class="sidebar-section">
       <h2>Upload Document</h2>
       <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.docx,.txt" />
+        <input type="file" id="fileInput"
+          accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.docx,.txt"
+          onchange="onFileSelected(this)" />
         <div class="icon">📄</div>
         <p><strong>Click or drag</strong> a file here</p>
         <p style="margin-top:4px">PDF, PNG, JPG, DOCX, TXT</p>
+        <div class="selected-file" id="selectedFileName"></div>
       </div>
       <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()">
-        Upload & Index
+        Upload &amp; Index
       </button>
       <div class="status-msg" id="uploadStatus"></div>
     </div>
 
-    <!-- Document list -->
+    <!-- Doc list -->
     <div class="doc-list">
       <h2>Indexed Documents</h2>
       <div id="docList"><div class="no-docs">No documents yet</div></div>
@@ -436,7 +450,7 @@
       </div>
     </div>
     <div class="query-bar">
-      <textarea id="queryInput" placeholder="Ask a question about your documents..." rows="1"
+      <textarea id="queryInput" placeholder="Ask a question about your documents..."
         onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
       <button class="send-btn" id="sendBtn" onclick="sendQuery()" title="Send">&#10148;</button>
     </div>
@@ -446,14 +460,14 @@
 
 <script>
   let providers = {};
+  let parsers = {};
   let isQuerying = false;
 
-  // ── Boot ────────────────────────────────────────────────────────────
   async function boot() {
-    await loadProviders();
-    await loadDocuments();
+    await Promise.all([loadProviders(), loadParsers(), loadDocuments()]);
   }
 
+  // ── Providers ──────────────────────────────────────────────────────────────
   async function loadProviders() {
     try {
       const res = await fetch('/providers');
@@ -463,20 +477,17 @@
       for (const [key, p] of Object.entries(providers)) {
         const opt = document.createElement('option');
         opt.value = key;
-        opt.textContent = p.name + (p.configured ? '' : ' (no key)');
+        opt.textContent = p.name + (p.configured ? '' : ' — no key');
         sel.appendChild(opt);
       }
       onProviderChange();
-    } catch(e) {
-      console.error(e);
-    }
+    } catch(e) { console.error(e); }
   }
 
   function onProviderChange() {
-    const provKey = document.getElementById('providerSelect').value;
-    const p = providers[provKey];
+    const key = document.getElementById('providerSelect').value;
+    const p = providers[key];
     if (!p) return;
-
     const modelSel = document.getElementById('modelSelect');
     modelSel.innerHTML = '';
     for (const m of p.models) {
@@ -485,19 +496,70 @@
       opt.textContent = m.name;
       modelSel.appendChild(opt);
     }
-
     const dot = document.getElementById('providerDot');
     const txt = document.getElementById('providerStatusText');
-    if (p.configured) {
-      dot.className = 'dot ok';
-      txt.textContent = 'API key configured';
-    } else {
-      dot.className = 'dot';
-      txt.textContent = 'API key not set';
-    }
+    if (p.configured) { dot.className = 'dot ok'; txt.textContent = 'API key configured'; }
+    else { dot.className = 'dot'; txt.textContent = 'API key not set'; }
   }
 
-  // ── Documents ───────────────────────────────────────────────────────
+  // ── Parsers ────────────────────────────────────────────────────────────────
+  async function loadParsers() {
+    try {
+      const res = await fetch('/parsers');
+      parsers = await res.json();
+      const sel = document.getElementById('parserSelect');
+      sel.innerHTML = '';
+      for (const [key, p] of Object.entries(parsers)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        const tag = p.free ? '(Free)' : '(API key)';
+        opt.textContent = `${p.name} ${tag}`;
+        if (!p.configured) opt.textContent += ' — no key';
+        sel.appendChild(opt);
+      }
+      onParserChange();
+    } catch(e) { console.error(e); }
+  }
+
+  function onParserChange() {
+    const key = document.getElementById('parserSelect').value;
+    const p = parsers[key];
+    if (!p) return;
+
+    const dot = document.getElementById('parserDot');
+    const txt = document.getElementById('parserStatusText');
+    const card = document.getElementById('parserCard');
+
+    if (p.configured) {
+      dot.className = p.free ? 'dot local' : 'dot ok';
+      txt.textContent = p.free ? 'Local — no API key needed' : 'API key configured';
+    } else {
+      dot.className = 'dot';
+      txt.textContent = `Needs ${p.env_key}`;
+    }
+
+    const isCloud = !p.free;
+    const badgeClass = isCloud ? 'cloud' : 'free';
+    card.style.display = 'block';
+    card.innerHTML = `
+      <div class="parser-name">${p.name}</div>
+      <div class="parser-desc">${p.description}</div>
+      <span class="parser-badge ${badgeClass}">${p.badge}</span>
+      <span class="parser-badge" style="margin-left:4px">Supports: ${p.formats.join(', ')}</span>
+    `;
+
+    // Show/hide formats hint
+    updateFormatHint(p.formats);
+  }
+
+  function updateFormatHint(formats) {
+    const input = document.getElementById('fileInput');
+    input.accept = formats.join(',');
+    const hint = document.querySelector('.drop-zone p:last-of-type');
+    if (hint) hint.textContent = formats.map(f => f.replace('.','').toUpperCase()).join(', ');
+  }
+
+  // ── Documents ──────────────────────────────────────────────────────────────
   async function loadDocuments() {
     try {
       const res = await fetch('/documents');
@@ -510,8 +572,10 @@
       container.innerHTML = docs.map(d => `
         <div class="doc-item">
           <span class="doc-icon">${getFileIcon(d.filename)}</span>
-          <span class="doc-name" title="${d.filename}">${d.filename}</span>
-          <span class="doc-chunks">${d.chunks}c</span>
+          <div class="doc-info">
+            <div class="doc-name" title="${d.filename}">${d.filename}</div>
+            <div class="doc-meta">${d.chunks} chunks · ${d.parser}</div>
+          </div>
           <button class="btn btn-danger" onclick="deleteDoc('${d.filename}')">✕</button>
         </div>
       `).join('');
@@ -520,7 +584,7 @@
 
   function getFileIcon(name) {
     const ext = name.split('.').pop().toLowerCase();
-    return { pdf:'📕', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', docx:'📘', txt:'📄' }[ext] || '📄';
+    return { pdf:'📕', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', docx:'📘', txt:'📄', tiff:'🖼️', bmp:'🖼️' }[ext] || '📄';
   }
 
   async function deleteDoc(filename) {
@@ -533,7 +597,12 @@
     } catch(e) { alert(e.message); }
   }
 
-  // ── Upload ──────────────────────────────────────────────────────────
+  // ── Upload ─────────────────────────────────────────────────────────────────
+  function onFileSelected(input) {
+    const nameEl = document.getElementById('selectedFileName');
+    nameEl.textContent = input.files[0] ? input.files[0].name : '';
+  }
+
   const dropZone = document.getElementById('dropZone');
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -541,7 +610,10 @@
     e.preventDefault();
     dropZone.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
-    if (file) { document.getElementById('fileInput').files = e.dataTransfer.files; }
+    if (file) {
+      document.getElementById('fileInput').files = e.dataTransfer.files;
+      document.getElementById('selectedFileName').textContent = file.name;
+    }
   });
 
   async function uploadFile() {
@@ -549,26 +621,32 @@
     const file = input.files[0];
     if (!file) { showStatus('uploadStatus', 'Please select a file first.', 'error'); return; }
 
+    const parser = document.getElementById('parserSelect').value;
+    const parserName = parsers[parser]?.name || parser;
+
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner">⟳</span> Parsing with LlamaParse...';
+    btn.innerHTML = `<span class="spinner">⟳</span> Parsing with ${parserName}...`;
     showStatus('uploadStatus', `Uploading and parsing "${file.name}"...`, 'info');
 
     const form = new FormData();
     form.append('file', file);
+    form.append('parser', parser);
 
     try {
       const res = await fetch('/upload', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Upload failed');
-      showStatus('uploadStatus', `✓ Stored ${data.chunks_stored} chunks from "${data.filename}"`, 'success');
+      showStatus('uploadStatus',
+        `✓ ${data.chunks_stored} chunks stored via ${data.parser}`, 'success');
       input.value = '';
+      document.getElementById('selectedFileName').textContent = '';
       await loadDocuments();
     } catch(e) {
       showStatus('uploadStatus', `✗ ${e.message}`, 'error');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = 'Upload & Index';
+      btn.innerHTML = 'Upload &amp; Index';
     }
   }
 
@@ -578,7 +656,7 @@
     el.className = `status-msg show ${type}`;
   }
 
-  // ── Query ───────────────────────────────────────────────────────────
+  // ── Query ──────────────────────────────────────────────────────────────────
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
   }
@@ -601,15 +679,12 @@
     input.value = '';
     input.style.height = '48px';
     document.getElementById('sendBtn').disabled = true;
-
     document.getElementById('emptyState')?.remove();
 
     const history = document.getElementById('chatHistory');
     const pair = document.createElement('div');
     pair.className = 'msg-pair';
-    pair.innerHTML = `
-      <div class="bubble bubble-user">${escapeHtml(query)}</div>
-    `;
+    pair.innerHTML = `<div class="bubble bubble-user">${escapeHtml(query)}</div>`;
     history.appendChild(pair);
 
     const typingEl = document.createElement('div');
@@ -626,14 +701,13 @@
       });
       const data = await res.json();
       typingEl.remove();
-
       if (!res.ok) throw new Error(data.detail || 'Query failed');
 
       const modelName = providers[provider]?.models.find(m => m.id === model)?.name || model;
 
       const answerEl = document.createElement('div');
       answerEl.innerHTML = `
-        <div class="model-pill">🤖 ${modelName}</div>
+        <div class="model-pill">🤖 ${escapeHtml(modelName)}</div>
         <div class="bubble bubble-assistant">${escapeHtml(data.answer)}</div>
       `;
       pair.appendChild(answerEl);
@@ -645,7 +719,10 @@
           <summary>${data.sources.length} source${data.sources.length > 1 ? 's' : ''} used</summary>
           ${data.sources.map(s => `
             <div class="source-item">
-              <div class="source-file">📄 ${escapeHtml(s.filename)} — chunk ${s.chunk_index}</div>
+              <div class="source-file">
+                📄 ${escapeHtml(s.filename)} — chunk ${s.chunk_index}
+                <span style="color:#64748b;font-weight:400"> · parsed by ${escapeHtml(s.parser)}</span>
+              </div>
               <div class="source-snippet">${escapeHtml(s.snippet)}</div>
             </div>
           `).join('')}
@@ -657,8 +734,7 @@
       typingEl.remove();
       const errEl = document.createElement('div');
       errEl.className = 'bubble bubble-assistant';
-      errEl.style.borderColor = '#7f1d1d';
-      errEl.style.color = '#f87171';
+      errEl.style.cssText = 'border-color:#7f1d1d;color:#f87171;';
       errEl.textContent = '✗ ' + e.message;
       pair.appendChild(errEl);
     } finally {

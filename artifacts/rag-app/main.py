@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -31,6 +31,43 @@ collection = chroma_client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"},
 )
 
+# ── Parser registry ────────────────────────────────────────────────────────────
+PARSERS = {
+    "llamaparse": {
+        "name": "LlamaParse",
+        "description": "Cloud API — best quality, handles complex layouts, tables & images",
+        "badge": "Cloud",
+        "env_key": "LLAMAPARSE_API_KEY",
+        "free": False,
+        "formats": [".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".docx"],
+    },
+    "pymupdf": {
+        "name": "PyMuPDF",
+        "description": "Local — fast native PDF text extraction, no API key needed",
+        "badge": "Local · Free",
+        "env_key": None,
+        "free": True,
+        "formats": [".pdf"],
+    },
+    "pdfplumber": {
+        "name": "pdfplumber",
+        "description": "Local — excellent table extraction from PDFs, no API key needed",
+        "badge": "Local · Free",
+        "env_key": None,
+        "free": True,
+        "formats": [".pdf"],
+    },
+    "tesseract": {
+        "name": "Tesseract OCR",
+        "description": "Local — OCR for images and scanned PDFs (converted page by page)",
+        "badge": "Local · Free",
+        "env_key": None,
+        "free": True,
+        "formats": [".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp"],
+    },
+}
+
+# ── LLM provider registry ──────────────────────────────────────────────────────
 PROVIDERS = {
     "groq": {
         "name": "Groq (Free)",
@@ -77,29 +114,98 @@ PROVIDERS = {
 }
 
 
-def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> list[str]:
-    chunks = []
-    start = 0
-    text = text.strip()
-    while start < len(text):
-        end = min(start + chunk_size, len(text))
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
-        if end == len(text):
-            break
-        start = end - overlap
-    return chunks
+# ── Parsing functions ──────────────────────────────────────────────────────────
 
-
-async def parse_document_llamaparse(file_path: str) -> str:
+async def parse_with_llamaparse(file_path: str) -> str:
     if not LLAMAPARSE_API_KEY:
-        raise HTTPException(status_code=500, detail="LLAMAPARSE_API_KEY is not configured.")
+        raise HTTPException(status_code=400, detail="LLAMAPARSE_API_KEY is not configured.")
     from llama_parse import LlamaParse
     parser = LlamaParse(api_key=LLAMAPARSE_API_KEY, result_type="text")
     documents = await parser.aload_data(file_path)
     return "\n\n".join([doc.text for doc in documents])
 
+
+def parse_with_pymupdf(file_path: str) -> str:
+    import fitz  # PyMuPDF
+    doc = fitz.open(file_path)
+    pages = []
+    for page in doc:
+        pages.append(page.get_text())
+    doc.close()
+    return "\n\n".join(pages)
+
+
+def parse_with_pdfplumber(file_path: str) -> str:
+    import pdfplumber
+    pages = []
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            tables = page.extract_tables()
+            table_text = ""
+            for table in tables:
+                for row in table:
+                    if row:
+                        table_text += " | ".join(str(c or "") for c in row) + "\n"
+            pages.append((text + "\n" + table_text).strip())
+    return "\n\n".join(p for p in pages if p)
+
+
+def parse_with_tesseract(file_path: str, suffix: str) -> str:
+    import pytesseract
+    from PIL import Image
+
+    if suffix == ".pdf":
+        import fitz  # PyMuPDF to render pages
+        doc = fitz.open(file_path)
+        texts = []
+        for page in doc:
+            mat = fitz.Matrix(2.0, 2.0)  # 2x zoom = ~144 dpi
+            pix = page.get_pixmap(matrix=mat)
+            img_data = pix.tobytes("png")
+            import io
+            img = Image.open(io.BytesIO(img_data))
+            texts.append(pytesseract.image_to_string(img))
+        doc.close()
+        return "\n\n".join(texts)
+    else:
+        img = Image.open(file_path)
+        return pytesseract.image_to_string(img)
+
+
+async def parse_document(file_path: str, suffix: str, parser: str) -> str:
+    if parser not in PARSERS:
+        raise HTTPException(status_code=400, detail=f"Unknown parser: {parser}")
+
+    p = PARSERS[parser]
+    if suffix not in p["formats"]:
+        supported = ", ".join(p["formats"])
+        raise HTTPException(
+            status_code=400,
+            detail=f"Parser '{p['name']}' does not support {suffix} files. Supported: {supported}",
+        )
+
+    if p["env_key"] and not os.getenv(p["env_key"]):
+        raise HTTPException(
+            status_code=400,
+            detail=f"API key {p['env_key']} is required for {p['name']} but is not configured.",
+        )
+
+    logger.info(f"Parsing with {p['name']} ...")
+
+    if parser == "llamaparse":
+        return await parse_with_llamaparse(file_path)
+    elif parser == "pymupdf":
+        return parse_with_pymupdf(file_path)
+    elif parser == "pdfplumber":
+        return parse_with_pdfplumber(file_path)
+    elif parser == "tesseract":
+        return parse_with_tesseract(file_path, suffix)
+
+    raise HTTPException(status_code=400, detail="Parser not implemented.")
+
+
+# ── LLM call ───────────────────────────────────────────────────────────────────
 
 async def call_llm(provider: str, model: str, prompt: str) -> str:
     if provider not in PROVIDERS:
@@ -133,10 +239,7 @@ async def call_llm(provider: str, model: str, prompt: str) -> str:
 
     elif provider == "openrouter":
         from openai import OpenAI
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
@@ -158,6 +261,35 @@ async def call_llm(provider: str, model: str, prompt: str) -> str:
     raise HTTPException(status_code=400, detail="Provider not implemented.")
 
 
+# ── Helpers ────────────────────────────────────────────────────────────────────
+
+def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 300) -> list[str]:
+    chunks = []
+    start = 0
+    text = text.strip()
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        if end == len(text):
+            break
+        start = end - overlap
+    return chunks
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────────────
+
+@app.get("/parsers")
+def get_parsers():
+    result = {}
+    for key, val in PARSERS.items():
+        env_key = val.get("env_key")
+        configured = True if not env_key else bool(os.getenv(env_key))
+        result[key] = {**val, "configured": configured}
+    return result
+
+
 @app.get("/providers")
 def get_providers():
     result = {}
@@ -172,18 +304,23 @@ def get_providers():
 def list_documents():
     try:
         results = collection.get(include=["metadatas"])
-        filenames = {}
+        docs: dict[str, dict] = {}
         for meta in results["metadatas"]:
             fn = meta.get("filename", "unknown")
-            filenames[fn] = filenames.get(fn, 0) + 1
-        return [{"filename": k, "chunks": v} for k, v in filenames.items()]
+            if fn not in docs:
+                docs[fn] = {"filename": fn, "chunks": 0, "parser": meta.get("parser", "unknown")}
+            docs[fn]["chunks"] += 1
+        return list(docs.values())
     except Exception as e:
         logger.error(f"Error listing documents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    parser: str = Form("llamaparse"),
+):
     allowed = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".docx", ".txt"}
     suffix = Path(file.filename).suffix.lower()
     if suffix not in allowed:
@@ -195,8 +332,7 @@ async def upload_document(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, tmp)
             tmp_path = tmp.name
 
-        logger.info(f"Parsing {file.filename} with LlamaParse...")
-        text = await parse_document_llamaparse(tmp_path)
+        text = await parse_document(tmp_path, suffix, parser)
 
         if not text.strip():
             raise HTTPException(status_code=422, detail="No text could be extracted from this file.")
@@ -205,14 +341,19 @@ async def upload_document(file: UploadFile = File(...)):
         logger.info(f"Split into {len(chunks)} chunks")
 
         ids = [str(uuid.uuid4()) for _ in chunks]
-        metadatas = [{"filename": file.filename, "chunk_index": i} for i in range(len(chunks))]
+        parser_name = PARSERS[parser]["name"]
+        metadatas = [
+            {"filename": file.filename, "chunk_index": i, "parser": parser_name}
+            for i in range(len(chunks))
+        ]
 
         collection.add(documents=chunks, metadatas=metadatas, ids=ids)
-        logger.info(f"Stored {len(chunks)} chunks for {file.filename}")
+        logger.info(f"Stored {len(chunks)} chunks for {file.filename} via {parser_name}")
 
         return {
             "success": True,
             "filename": file.filename,
+            "parser": parser_name,
             "chunks_stored": len(chunks),
             "preview": text[:300] + "..." if len(text) > 300 else text,
         }
@@ -274,7 +415,12 @@ Answer clearly and concisely, and explain medical or billing terms if present.""
     answer = await call_llm(req.provider, req.model, prompt)
 
     sources = [
-        {"filename": m["filename"], "chunk_index": m["chunk_index"], "snippet": d[:200] + "..." if len(d) > 200 else d}
+        {
+            "filename": m["filename"],
+            "chunk_index": m["chunk_index"],
+            "parser": m.get("parser", "unknown"),
+            "snippet": d[:200] + "..." if len(d) > 200 else d,
+        }
         for d, m in zip(docs, metas)
     ]
 
