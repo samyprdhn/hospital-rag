@@ -427,6 +427,87 @@ Answer clearly and concisely, and explain medical or billing terms if present.""
     return {"answer": answer, "sources": sources}
 
 
+@app.post("/compare")
+async def compare_parsers(
+    file: UploadFile = File(...),
+    parser_a: str = Form(...),
+    parser_b: str = Form(...),
+):
+    allowed = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".docx", ".txt"}
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in allowed:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {suffix}")
+    if parser_a not in PARSERS or parser_b not in PARSERS:
+        raise HTTPException(status_code=400, detail="Unknown parser specified.")
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
+
+        import time
+        results = {}
+        for key in (parser_a, parser_b):
+            if key not in results:
+                p = PARSERS[key]
+                if suffix not in p["formats"]:
+                    results[key] = {
+                        "parser": p["name"],
+                        "error": f"Parser does not support {suffix} files.",
+                        "text": "",
+                        "chars": 0,
+                        "words": 0,
+                        "lines": 0,
+                        "chunks": 0,
+                        "elapsed_ms": 0,
+                    }
+                    continue
+                t0 = time.time()
+                try:
+                    text = await parse_document(tmp_path, suffix, key)
+                    elapsed = int((time.time() - t0) * 1000)
+                    chunks = chunk_text(text)
+                    results[key] = {
+                        "parser": p["name"],
+                        "text": text,
+                        "preview": text[:4000],
+                        "chars": len(text),
+                        "words": len(text.split()),
+                        "lines": text.count("\n") + 1,
+                        "chunks": len(chunks),
+                        "elapsed_ms": elapsed,
+                        "error": None,
+                    }
+                except HTTPException as e:
+                    results[key] = {
+                        "parser": p["name"],
+                        "error": e.detail,
+                        "text": "",
+                        "preview": "",
+                        "chars": 0,
+                        "words": 0,
+                        "lines": 0,
+                        "chunks": 0,
+                        "elapsed_ms": 0,
+                    }
+
+        return {
+            "filename": file.filename,
+            "a": results[parser_a],
+            "b": results[parser_b],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Compare error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
 @app.delete("/documents/{filename}")
 def delete_document(filename: str):
     try:
