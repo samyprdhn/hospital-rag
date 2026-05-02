@@ -201,6 +201,12 @@
     .btn-index.done { background: #1e293b; color: #64748b; cursor: default; }
     .index-result { font-size: 11px; margin-left: 4px; }
 
+    .cmp-col-footer {
+      padding: 10px 14px;
+      border-top: 1px solid #1e293b;
+      background: #111827;
+      flex-shrink: 0;
+    }
     .compare-status { padding: 10px 20px; border-bottom: 1px solid #1e293b; background: #0c1a2e; color: #93c5fd; font-size: 12px; display: none; }
     .compare-status.show { display: block; }
 
@@ -579,9 +585,9 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Compare failed');
 
-      statusEl.textContent = `✓ Comparison complete for "${data.filename}"`;
-      renderCol('A', data.a, data.b);
-      renderCol('B', data.b, data.a);
+      statusEl.textContent = `✓ Comparison complete for "${data.filename}" — pick a parser to index it directly below.`;
+      renderCol('A', parserA, data.filename, data.a, data.b);
+      renderCol('B', parserB, data.filename, data.b, data.a);
     } catch(e) {
       statusEl.textContent = '✗ ' + e.message;
       statusEl.style.color = '#f87171';
@@ -602,7 +608,7 @@
     col.appendChild(loading);
   }
 
-  function renderCol(side, result, other) {
+  function renderCol(side, parserKey, filename, result, other) {
     const col = document.getElementById('col' + side);
     document.getElementById('col' + side + 'Name').textContent = result.parser;
     Array.from(col.children).forEach(c => { if (!c.classList.contains('cmp-col-header')) c.remove(); });
@@ -617,10 +623,10 @@
 
     // Stats row
     const stats = [
-      { key: 'chars',       label: 'Chars',  val: result.chars,       fmt: n => n.toLocaleString() },
-      { key: 'words',       label: 'Words',  val: result.words,       fmt: n => n.toLocaleString() },
-      { key: 'chunks',      label: 'Chunks', val: result.chunks,      fmt: n => n.toString() },
-      { key: 'elapsed_ms',  label: 'Time',   val: result.elapsed_ms,  fmt: n => n >= 1000 ? (n/1000).toFixed(1)+'s' : n+'ms', lower: true },
+      { key: 'chars',      label: 'Chars',  val: result.chars,      fmt: n => n.toLocaleString() },
+      { key: 'words',      label: 'Words',  val: result.words,      fmt: n => n.toLocaleString() },
+      { key: 'chunks',     label: 'Chunks', val: result.chunks,     fmt: n => n.toString() },
+      { key: 'elapsed_ms', label: 'Time',   val: result.elapsed_ms, fmt: n => n >= 1000 ? (n/1000).toFixed(1)+'s' : n+'ms', lower: true },
     ];
 
     const statRow = document.createElement('div');
@@ -641,6 +647,57 @@
     textBox.className = 'cmp-text-box';
     textBox.textContent = result.preview || '(no text extracted)';
     col.appendChild(textBox);
+
+    // Index button footer
+    const footer = document.createElement('div');
+    footer.className = 'cmp-col-footer';
+    const btnId = `indexBtn${side}`;
+    const btn = document.createElement('button');
+    btn.id = btnId;
+    btn.className = 'btn-index';
+    btn.innerHTML = `📥 Index with ${escapeHtml(result.parser)}`;
+    btn.onclick = () => indexFromCompare(parserKey, filename, result.text || result.preview, btnId);
+    footer.appendChild(btn);
+    col.appendChild(footer);
+  }
+
+  async function indexFromCompare(parserKey, filename, text, btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn || btn.classList.contains('done')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner">⟳</span> Indexing...';
+    try {
+      const res = await fetch('/index-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, parser_key: parserKey, text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Index failed');
+      btn.classList.add('done');
+      btn.innerHTML = `✓ Indexed — ${data.chunks_stored} chunks stored`;
+      showToast(`✓ "${filename}" indexed via ${data.parser} (${data.chunks_stored} chunks)`, 'success');
+      await loadDocuments();
+    } catch(e) {
+      btn.disabled = false;
+      btn.innerHTML = `📥 Index with ${parsers[parserKey]?.name || parserKey}`;
+      showToast('✗ ' + e.message, 'error');
+    }
+  }
+
+  function showToast(msg, type = '') {
+    let toast = document.getElementById('globalToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'globalToast';
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.className = `toast ${type}`;
+    requestAnimationFrame(() => { requestAnimationFrame(() => { toast.classList.add('show'); }); });
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
   }
 
   // ── Chat ───────────────────────────────────────────────────────────────────
