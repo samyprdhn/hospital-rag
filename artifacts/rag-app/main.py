@@ -427,6 +427,40 @@ Answer clearly and concisely, and explain medical or billing terms if present.""
     return {"answer": answer, "sources": sources}
 
 
+class IndexTextRequest(BaseModel):
+    filename: str
+    parser_key: str
+    text: str
+
+
+@app.post("/index-text")
+async def index_text(req: IndexTextRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="Text is empty — nothing to index.")
+    if req.parser_key not in PARSERS:
+        raise HTTPException(status_code=400, detail=f"Unknown parser: {req.parser_key}")
+
+    parser_name = PARSERS[req.parser_key]["name"]
+    chunks = chunk_text(req.text)
+    if not chunks:
+        raise HTTPException(status_code=422, detail="No usable chunks produced from the text.")
+
+    ids = [str(uuid.uuid4()) for _ in chunks]
+    metadatas = [
+        {"filename": req.filename, "chunk_index": i, "parser": parser_name}
+        for i in range(len(chunks))
+    ]
+    collection.add(documents=chunks, metadatas=metadatas, ids=ids)
+    logger.info(f"Indexed {len(chunks)} chunks for '{req.filename}' via {parser_name} (from compare)")
+
+    return {
+        "success": True,
+        "filename": req.filename,
+        "parser": parser_name,
+        "chunks_stored": len(chunks),
+    }
+
+
 @app.post("/compare")
 async def compare_parsers(
     file: UploadFile = File(...),

@@ -188,6 +188,19 @@
     .cmp-empty .e-icon { font-size: 36px; }
     .cmp-empty p { font-size: 13px; }
 
+    .btn-index {
+      border: none; border-radius: 7px; padding: 8px 14px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .col-a .btn-index { background: #312e81; color: #a5b4fc; }
+    .col-a .btn-index:hover { background: #3730a3; }
+    .col-b .btn-index { background: #052e16; color: #4ade80; }
+    .col-b .btn-index:hover { background: #14532d; }
+    .btn-index:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-index.done { background: #1e293b; color: #64748b; cursor: default; }
+    .index-result { font-size: 11px; margin-left: 4px; }
+
     .compare-status { padding: 10px 20px; border-bottom: 1px solid #1e293b; background: #0c1a2e; color: #93c5fd; font-size: 12px; display: none; }
     .compare-status.show { display: block; }
 
