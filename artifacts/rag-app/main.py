@@ -35,11 +35,11 @@ PROVIDERS = {
     "groq": {
         "name": "Groq (Free)",
         "models": [
-            {"id": "llama-3.1-70b-versatile", "name": "Llama 3.1 70B"},
             {"id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B"},
             {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B (Fast)"},
             {"id": "mixtral-8x7b-32768", "name": "Mixtral 8x7B"},
             {"id": "gemma2-9b-it", "name": "Gemma 2 9B"},
+            {"id": "llama3-70b-8192", "name": "Llama 3 70B"},
         ],
         "env_key": "GROQ_API_KEY",
         "free": True,
@@ -230,7 +230,7 @@ async def upload_document(file: UploadFile = File(...)):
 class QueryRequest(BaseModel):
     query: str
     provider: str = "groq"
-    model: str = "llama-3.1-70b-versatile"
+    model: str = "llama-3.3-70b-versatile"
     top_k: int = 5
 
 
