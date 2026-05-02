@@ -403,6 +403,12 @@ async def query_documents(req: QueryRequest):
     prompt = f"""You are a medical and billing assistant. Use the context below to answer the question.
 If the answer is not in the context, say you don't know.
 
+Currency rules (strictly follow these):
+- Always use the exact currency symbol and amount as it appears in the source document.
+- Do not convert, substitute, or guess the currency (e.g. do not replace R with $ or £).
+- If the document originates from South Africa or references HPCSA, Discovery Health, or similar South African bodies, the currency is South African Rand — use the symbol R (e.g. R904.00), not $ or £.
+- If the currency symbol is genuinely absent from the document, state "currency not specified in the document" rather than guessing.
+
 Context:
 {context}
 
