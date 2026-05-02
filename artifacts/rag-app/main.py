@@ -406,8 +406,8 @@ If the answer is not in the context, say you don't know.
 Currency rules (strictly follow these):
 - Always use the exact currency symbol and amount as it appears in the source document.
 - Do not convert, substitute, or guess the currency (e.g. do not replace R with $ or £).
-- If the document originates from South Africa or references HPCSA, Discovery Health, or similar South African bodies, the currency is South African Rand — use the symbol R (e.g. R904.00), not $ or £.
-- If the currency symbol is genuinely absent from the document, state "currency not specified in the document" rather than guessing.
+- If the document contains clues about its country of origin (e.g. country name, city, regulatory body, bank, insurer, phone format, address), infer the correct local currency from that country and use it consistently. Examples: South Africa → R (Rand), Nepal → Rs / रू (Nepali Rupee), India → ₹ (Rupee), UK → £ (Pound), USA → $ (Dollar), Europe → € (Euro), Kenya → KSh (Shilling).
+- If the currency symbol is genuinely absent and the country cannot be determined from the document, state "currency not specified in the document" rather than guessing.
 
 Context:
 {context}
