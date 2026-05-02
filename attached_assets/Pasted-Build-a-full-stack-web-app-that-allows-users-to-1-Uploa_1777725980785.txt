@@ -1,0 +1,82 @@
+Build a full-stack web app that allows users to:
+
+1. Upload documents (PDF, PNG, JPG)
+2. Extract text from the documents (use OCR if needed)
+3. Chunk and embed the extracted text
+4. Store embeddings in a vector database
+5. Query the documents using a RAG (Retrieval-Augmented Generation) pipeline
+
+Tech stack requirements:
+- Backend: Python with FastAPI
+- Frontend: simple HTML + JavaScript (no frameworks required)
+- Embeddings + LLM: OpenAI API
+- Vector DB: Chroma (local, persistent)
+- OCR: use pytesseract OR a fallback to a vision-capable LLM if needed
+- PDF parsing: PyMuPDF or pdfplumber
+
+Functional requirements:
+
+UPLOAD FLOW:
+- Create an endpoint POST /upload
+- Accept file uploads
+- Extract text from:
+  - PDFs (using PyMuPDF or pdfplumber)
+  - Images (using pytesseract)
+- Clean and normalize text
+- Chunk text into ~500 token chunks with overlap
+- Generate embeddings using OpenAI
+- Store chunks + metadata in Chroma DB
+  - metadata should include filename and chunk index
+
+QUERY FLOW:
+- Create endpoint POST /query
+- Accept a user query
+- Embed the query
+- Retrieve top-k relevant chunks from Chroma
+- Construct a prompt using retrieved context
+- Call OpenAI LLM to generate an answer
+- Return:
+  - answer
+  - sources (filenames + chunk snippets)
+
+FRONTEND:
+- Simple page with:
+  - file upload input
+  - "Upload" button
+  - text input for queries
+  - "Ask" button
+- Display:
+  - upload status
+  - query response
+  - sources used
+
+RAG PROMPT TEMPLATE:
+Use this structure:
+
+"You are a medical and billing assistant. Use the context below to answer the question.
+If the answer is not in the context, say you don't know.
+
+Context:
+{retrieved_chunks}
+
+Question:
+{user_query}
+
+Answer clearly and concisely, and explain medical or billing terms if present."
+
+OTHER REQUIREMENTS:
+- Store Chroma DB locally in a folder (e.g., ./chroma_db)
+- Use environment variable for OPENAI_API_KEY
+- Add basic error handling
+- Make the app runnable with:
+    uvicorn main:app --reload
+
+OPTIONAL (if easy to include):
+- Add ability to list uploaded documents
+- Add simple logging for debugging
+
+Deliver:
+- main.py (FastAPI backend)
+- minimal frontend (index.html + JS)
+- requirements.txt
+- clear instructions to run locally
