@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Document QA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #334155;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header .logo { font-size: 22px; }
+    header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+    header p { font-size: 12px; color: #64748b; margin-top: 1px; }
+
+    .badge {
+      margin-left: auto;
+      background: #10b981;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 65px);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      background: #111827;
+      border-right: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .sidebar-section h2 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    /* LLM Selector */
+    .select-group { display: flex; flex-direction: column; gap: 8px; }
+
+    select {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    select:focus { border-color: #6366f1; }
+
+    .provider-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .provider-status .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      flex-shrink: 0;
+    }
+    .provider-status .dot.ok { background: #10b981; }
+
+    /* Upload */
+    .drop-zone {
+      border: 2px dashed #334155;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #6366f1;
+      background: #1e1b4b22;
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+    }
+    .drop-zone .icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-zone p { font-size: 12px; color: #94a3b8; }
+    .drop-zone p strong { color: #a5b4fc; }
+
+    .btn {
+      width: 100%;
+      padding: 9px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-primary {
+      background: #6366f1;
+      color: #fff;
+      margin-top: 10px;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-primary:disabled { background: #3730a3; opacity: 0.6; cursor: not-allowed; }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid #ef4444;
+      color: #f87171;
+      padding: 4px 8px;
+      width: auto;
+      font-size: 11px;
+      border-radius: 5px;
+    }
+    .btn-danger:hover { background: #ef444422; }
+
+    .status-msg {
+      margin-top: 8px;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      display: none;
+    }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+    .status-msg.error { background: #2d0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+    .status-msg.info { background: #0c1a2e; color: #93c5fd; border: 1px solid #1e3a5f; }
+
+    /* Documents list */
+    .doc-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+    .doc-list h2 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #1e293b;
+      border-radius: 7px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .doc-item .doc-icon { font-size: 16px; flex-shrink: 0; }
+    .doc-item .doc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-item .doc-chunks { color: #64748b; font-size: 11px; flex-shrink: 0; }
+    .no-docs { color: #475569; font-size: 12px; text-align: center; padding: 20px 0; }
+
+    /* MAIN */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      text-align: center;
+      gap: 12px;
+    }
+    .empty-state .big-icon { font-size: 56px; }
+    .empty-state h3 { font-size: 16px; color: #94a3b8; }
+    .empty-state p { font-size: 13px; max-width: 320px; line-height: 1.6; }
+
+    .msg-pair { display: flex; flex-direction: column; gap: 12px; }
+
+    .bubble {
+      max-width: 85%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .bubble-user {
+      align-self: flex-end;
+      background: #6366f1;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-assistant {
+      align-self: flex-start;
+      background: #1e293b;
+      color: #e2e8f0;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #334155;
+    }
+    .bubble-meta {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .sources-box {
+      align-self: flex-start;
+      max-width: 85%;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+    }
+    .sources-box summary {
+      cursor: pointer;
+      color: #818cf8;
+      font-weight: 600;
+      user-select: none;
+      list-style: none;
+    }
+    .sources-box summary::-webkit-details-marker { display: none; }
+    .sources-box summary::before { content: '▶ '; font-size: 10px; }
+    .sources-box[open] summary::before { content: '▼ '; }
+
+    .source-item {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #1e293b;
+      border-radius: 7px;
+      border-left: 3px solid #6366f1;
+    }
+    .source-item .source-file { font-weight: 600; color: #a5b4fc; margin-bottom: 4px; }
+    .source-item .source-snippet { color: #94a3b8; line-height: 1.5; }
+
+    .typing-indicator {
+      align-self: flex-start;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      border-bottom-left-radius: 4px;
+      padding: 14px 20px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .typing-indicator span {
+      width: 7px; height: 7px;
+      background: #6366f1;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-8px); }
+    }
+
+    /* Query input bar */
+    .query-bar {
+      border-top: 1px solid #1e293b;
+      padding: 16px 24px;
+      display: flex;
+      gap: 10px;
+      background: #0f1117;
+    }
+    .query-bar textarea {
+      flex: 1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      height: 48px;
+      max-height: 140px;
+      transition: border-color 0.15s;
+      line-height: 1.5;
+    }
+    .query-bar textarea:focus { border-color: #6366f1; }
+    .query-bar textarea::placeholder { color: #475569; }
+    .send-btn {
+      width: 48px; height: 48px;
+      background: #6366f1;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn:hover { background: #4f46e5; }
+    .send-btn:disabled { background: #3730a3; opacity: 0.6; cursor: not-allowed; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    .spinner { animation: spin 0.8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .model-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🧠</span>
+  <div>
+    <h1>RAG Document QA</h1>
+    <p>Upload documents, ask questions, get answers with sources</p>
+  </div>
+  <span class="badge">● Live</span>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- LLM Selector -->
+    <div class="sidebar-section">
+      <h2>LLM Provider</h2>
+      <div class="select-group">
+        <select id="providerSelect" onchange="onProviderChange()">
+          <option value="groq">Loading providers...</option>
+        </select>
+        <select id="modelSelect">
+          <option value="">Select provider first</option>
+        </select>
+        <div class="provider-status">
+          <span class="dot" id="providerDot"></span>
+          <span id="providerStatusText">Checking...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload -->
+    <div class="sidebar-section">
+      <h2>Upload Document</h2>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.docx,.txt" />
+        <div class="icon">📄</div>
+        <p><strong>Click or drag</strong> a file here</p>
+        <p style="margin-top:4px">PDF, PNG, JPG, DOCX, TXT</p>
+      </div>
+      <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()">
+        Upload & Index
+      </button>
+      <div class="status-msg" id="uploadStatus"></div>
+    </div>
+
+    <!-- Document list -->
+    <div class="doc-list">
+      <h2>Indexed Documents</h2>
+      <div id="docList"><div class="no-docs">No documents yet</div></div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CHAT -->
+  <main class="main">
+    <div class="chat-history" id="chatHistory">
+      <div class="empty-state" id="emptyState">
+        <div class="big-icon">💬</div>
+        <h3>Ask your documents anything</h3>
+        <p>Upload a document on the left, then type your question below. The AI will search through your documents and answer with sources.</p>
+      </div>
+    </div>
+    <div class="query-bar">
+      <textarea id="queryInput" placeholder="Ask a question about your documents..." rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendQuery()" title="Send">&#10148;</button>
+    </div>
+  </main>
+
+</div>
+
+<script>
+  let providers = {};
+  let isQuerying = false;
+
+  // ── Boot ────────────────────────────────────────────────────────────
+  async function boot() {
+    await loadProviders();
+    await loadDocuments();
+  }
+
+  async function loadProviders() {
+    try {
+      const res = await fetch('/providers');
+      providers = await res.json();
+      const sel = document.getElementById('providerSelect');
+      sel.innerHTML = '';
+      for (const [key, p] of Object.entries(providers)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = p.name + (p.configured ? '' : ' (no key)');
+        sel.appendChild(opt);
+      }
+      onProviderChange();
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  function onProviderChange() {
+    const provKey = document.getElementById('providerSelect').value;
+    const p = providers[provKey];
+    if (!p) return;
+
+    const modelSel = document.getElementById('modelSelect');
+    modelSel.innerHTML = '';
+    for (const m of p.models) {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      modelSel.appendChild(opt);
+    }
+
+    const dot = document.getElementById('providerDot');
+    const txt = document.getElementById('providerStatusText');
+    if (p.configured) {
+      dot.className = 'dot ok';
+      txt.textContent = 'API key configured';
+    } else {
+      dot.className = 'dot';
+      txt.textContent = 'API key not set';
+    }
+  }
+
+  // ── Documents ───────────────────────────────────────────────────────
+  async function loadDocuments() {
+    try {
+      const res = await fetch('/documents');
+      const docs = await res.json();
+      const container = document.getElementById('docList');
+      if (!docs.length) {
+        container.innerHTML = '<div class="no-docs">No documents yet</div>';
+        return;
+      }
+      container.innerHTML = docs.map(d => `
+        <div class="doc-item">
+          <span class="doc-icon">${getFileIcon(d.filename)}</span>
+          <span class="doc-name" title="${d.filename}">${d.filename}</span>
+          <span class="doc-chunks">${d.chunks}c</span>
+          <button class="btn btn-danger" onclick="deleteDoc('${d.filename}')">✕</button>
+        </div>
+      `).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    return { pdf:'📕', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', docx:'📘', txt:'📄' }[ext] || '📄';
+  }
+
+  async function deleteDoc(filename) {
+    if (!confirm(`Delete "${filename}" from the index?`)) return;
+    try {
+      const res = await fetch(`/documents/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Delete failed');
+      await loadDocuments();
+    } catch(e) { alert(e.message); }
+  }
+
+  // ── Upload ──────────────────────────────────────────────────────────
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) { document.getElementById('fileInput').files = e.dataTransfer.files; }
+  });
+
+  async function uploadFile() {
+    const input = document.getElementById('fileInput');
+    const file = input.files[0];
+    if (!file) { showStatus('uploadStatus', 'Please select a file first.', 'error'); return; }
+
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner">⟳</span> Parsing with LlamaParse...';
+    showStatus('uploadStatus', `Uploading and parsing "${file.name}"...`, 'info');
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const res = await fetch('/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Upload failed');
+      showStatus('uploadStatus', `✓ Stored ${data.chunks_stored} chunks from "${data.filename}"`, 'success');
+      input.value = '';
+      await loadDocuments();
+    } catch(e) {
+      showStatus('uploadStatus', `✗ ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Upload & Index';
+    }
+  }
+
+  function showStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = `status-msg show ${type}`;
+  }
+
+  // ── Query ───────────────────────────────────────────────────────────
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+
+  async function sendQuery() {
+    if (isQuerying) return;
+    const input = document.getElementById('queryInput');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const provider = document.getElementById('providerSelect').value;
+    const model = document.getElementById('modelSelect').value;
+
+    isQuerying = true;
+    input.value = '';
+    input.style.height = '48px';
+    document.getElementById('sendBtn').disabled = true;
+
+    document.getElementById('emptyState')?.remove();
+
+    const history = document.getElementById('chatHistory');
+    const pair = document.createElement('div');
+    pair.className = 'msg-pair';
+    pair.innerHTML = `
+      <div class="bubble bubble-user">${escapeHtml(query)}</div>
+    `;
+    history.appendChild(pair);
+
+    const typingEl = document.createElement('div');
+    typingEl.className = 'typing-indicator';
+    typingEl.innerHTML = '<span></span><span></span><span></span>';
+    history.appendChild(typingEl);
+    history.scrollTop = history.scrollHeight;
+
+    try {
+      const res = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, provider, model, top_k: 5 }),
+      });
+      const data = await res.json();
+      typingEl.remove();
+
+      if (!res.ok) throw new Error(data.detail || 'Query failed');
+
+      const modelName = providers[provider]?.models.find(m => m.id === model)?.name || model;
+
+      const answerEl = document.createElement('div');
+      answerEl.innerHTML = `
+        <div class="model-pill">🤖 ${modelName}</div>
+        <div class="bubble bubble-assistant">${escapeHtml(data.answer)}</div>
+      `;
+      pair.appendChild(answerEl);
+
+      if (data.sources?.length) {
+        const sourcesEl = document.createElement('details');
+        sourcesEl.className = 'sources-box';
+        sourcesEl.innerHTML = `
+          <summary>${data.sources.length} source${data.sources.length > 1 ? 's' : ''} used</summary>
+          ${data.sources.map(s => `
+            <div class="source-item">
+              <div class="source-file">📄 ${escapeHtml(s.filename)} — chunk ${s.chunk_index}</div>
+              <div class="source-snippet">${escapeHtml(s.snippet)}</div>
+            </div>
+          `).join('')}
+        `;
+        pair.appendChild(sourcesEl);
+      }
+
+    } catch(e) {
+      typingEl.remove();
+      const errEl = document.createElement('div');
+      errEl.className = 'bubble bubble-assistant';
+      errEl.style.borderColor = '#7f1d1d';
+      errEl.style.color = '#f87171';
+      errEl.textContent = '✗ ' + e.message;
+      pair.appendChild(errEl);
+    } finally {
+      isQuerying = false;
+      document.getElementById('sendBtn').disabled = false;
+      history.scrollTop = history.scrollHeight;
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '<br>');
+  }
+
+  boot();
+</script>
+</body>
+</html>
