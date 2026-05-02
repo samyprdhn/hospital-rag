@@ -392,6 +392,7 @@
   async function loadProviders() {
     try {
       const res = await fetch('/providers');
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       providers = await res.json();
       const sel = document.getElementById('providerSelect');
       sel.innerHTML = '';
@@ -402,7 +403,12 @@
         sel.appendChild(opt);
       }
       onProviderChange();
-    } catch(e) { console.error(e); }
+    } catch(e) {
+      console.error('loadProviders:', e);
+      document.getElementById('providerStatusText').textContent = 'Cannot reach server — is it running?';
+      document.getElementById('providerDot').className = 'dot';
+      document.getElementById('providerSelect').innerHTML = '<option>Unavailable</option>';
+    }
   }
 
   function onProviderChange() {
