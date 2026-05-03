@@ -566,4 +566,17 @@ def delete_document(filename: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/")
+async def serve_index():
+    from fastapi.responses import HTMLResponse
+    with open("static/index.html", "r") as f:
+        content = f.read()
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
