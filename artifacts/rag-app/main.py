@@ -126,7 +126,7 @@ async def parse_with_llamaparse(file_path: str) -> str:
     parser = LlamaParse(
         api_key=LLAMAPARSE_API_KEY, 
         result_type="text",
-        language="eng,npi",  # English + Nepali (npi is the ISO 639-3 code for Nepali)
+        language="ne",  # English + Nepali
         verbose=False
     )
     documents = await parser.aload_data(file_path)
