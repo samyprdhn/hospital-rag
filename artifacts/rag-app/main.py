@@ -122,7 +122,13 @@ async def parse_with_llamaparse(file_path: str) -> str:
     if not LLAMAPARSE_API_KEY:
         raise HTTPException(status_code=400, detail="LLAMAPARSE_API_KEY is not configured.")
     from llama_parse import LlamaParse
-    parser = LlamaParse(api_key=LLAMAPARSE_API_KEY, result_type="text")
+    # Enable Nepali (Devanagari script) support along with English
+    parser = LlamaParse(
+        api_key=LLAMAPARSE_API_KEY, 
+        result_type="text",
+        language="eng,npi",  # English + Nepali (npi is the ISO 639-3 code for Nepali)
+        verbose=False
+    )
     documents = await parser.aload_data(file_path)
     return "\n\n".join([doc.text for doc in documents])
 
@@ -167,12 +173,14 @@ def parse_with_tesseract(file_path: str, suffix: str) -> str:
             img_data = pix.tobytes("png")
             import io
             img = Image.open(io.BytesIO(img_data))
-            texts.append(pytesseract.image_to_string(img))
+            # Support both English and Nepali (Devanagari script)
+            texts.append(pytesseract.image_to_string(img, lang="eng+nep"))
         doc.close()
         return "\n\n".join(texts)
     else:
         img = Image.open(file_path)
-        return pytesseract.image_to_string(img)
+        # Support both English and Nepali (Devanagari script)
+        return pytesseract.image_to_string(img, lang="eng+nep")
 
 
 async def parse_document(file_path: str, suffix: str, parser: str) -> str:
