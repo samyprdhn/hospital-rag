@@ -1,4 +1,6 @@
 import os
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
+
 import uuid
 import logging
 import tempfile
