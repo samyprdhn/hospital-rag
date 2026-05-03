@@ -1,0 +1,139 @@
+#10 46.93    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 309.1/309.1 kB 326.0 MB/s eta 0:00:00
+#10 46.93 Downloading platformdirs-4.9.6-py3-none-any.whl (21 kB)
+#10 46.94 Downloading markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+#10 46.94 Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+#10 46.94    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 48.2/48.2 kB 278.5 MB/s eta 0:00:00
+#10 46.95 Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+#10 47.79 Installing collected packages: pypika, flatbuffers, filetype, durationpy, dirtyjson, zipp, wrapt, websockets, websocket-client, uvloop, urllib3, uritemplate, typing-extensions, tqdm, tenacity, sniffio, six, shellingham, regex, PyYAML, python-multipart, python-dotenv, pyproject_hooks, pypdfium2, pyparsing, pymupdf, pygments, pycparser, pyasn1, protobuf, propcache, platformdirs, pillow, packaging, overrides, orjson, opentelemetry-util-http, oauthlib, numpy, networkx, nest-asyncio, mypy-extensions, multidict, mmh3, mdurl, MarkupSafe, joblib, jiter, importlib-resources, idna, httptools, hf-xet, h11, griffelib, greenlet, fsspec, frozenlist, filelock, distro, colorama, click, charset-normalizer, certifi, bcrypt, backoff, attrs, asgiref, annotated-types, annotated-doc, aiosqlite, aiohappyeyeballs, yarl, uvicorn, typing-inspect, sqlalchemy, requests, python-dateutil, pytesseract, pydantic-core, pyasn1-modules, proto-plus, opentelemetry-proto, onnxruntime, nltk, marshmallow, markdown-it-py, jinja2, importlib-metadata, httplib2, httpcore, grpcio, griffecli, googleapis-common-protos, deprecated, chroma-hnswlib, cffi, build, anyio, aiosignal, watchfiles, tiktoken, starlette, rich, requests-oauthlib, pydantic, posthog, opentelemetry-exporter-otlp-proto-common, opentelemetry-api, huggingface-hub, httpx, grpcio-status, griffe, dataclasses-json, cryptography, aiohttp, typer, tokenizers, pdfminer.six, opentelemetry-semantic-conventions, openai, kubernetes, groq, google-auth, fastapi, banks, pdfplumber, opentelemetry-sdk, opentelemetry-instrumentation, llama-index-core, google-auth-httplib2, google-api-core, opentelemetry-instrumentation-asgi, opentelemetry-exporter-otlp-proto-grpc, llama-parse, google-api-python-client, opentelemetry-instrumentation-fastapi, google-ai-generativelanguage, google-generativeai, chromadb
+#10 64.86 Successfully installed MarkupSafe-3.0.3 PyYAML-6.0.3 aiohappyeyeballs-2.6.1 aiohttp-3.13.5 aiosignal-1.4.0 aiosqlite-0.22.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 asgiref-3.11.1 attrs-26.1.0 backoff-2.2.1 banks-2.4.2 bcrypt-5.0.0 build-1.5.0 certifi-2026.4.22 cffi-2.0.0 charset-normalizer-3.4.7 chroma-hnswlib-0.7.6 chromadb-0.5.23 click-8.3.3 colorama-0.4.6 cryptography-47.0.0 dataclasses-json-0.6.7 deprecated-1.3.1 dirtyjson-1.0.8 distro-1.9.0 durationpy-0.10 fastapi-0.115.5 filelock-3.29.0 filetype-1.2.0 flatbuffers-25.12.19 frozenlist-1.8.0 fsspec-2026.4.0 google-ai-generativelanguage-0.6.10 google-api-core-2.30.3 google-api-python-client-2.195.0 google-auth-2.50.0 google-auth-httplib2-0.3.1 google-generativeai-0.8.3 googleapis-common-protos-1.74.0 greenlet-3.5.0 griffe-2.0.2 griffecli-2.0.2 griffelib-2.0.2 groq-0.12.0 grpcio-1.80.0 grpcio-status-1.71.2 h11-0.16.0 hf-xet-1.4.3 httpcore-1.0.9 httplib2-0.31.2 httptools-0.7.1 httpx-0.27.2 huggingface-hub-0.36.2 idna-3.13 importlib-metadata-8.7.1 importlib-resources-7.1.0 jinja2-3.1.6 jiter-0.14.0 joblib-1.5.3 kubernetes-35.0.0 llama-index-core-0.12.42 llama-parse-0.5.14 markdown-it-py-4.0.0 marshmallow-3.26.2 mdurl-0.1.2 mmh3-5.2.1 multidict-6.7.1 mypy-extensions-1.1.0 nest-asyncio-1.6.0 networkx-3.6.1 nltk-3.9.4 numpy-2.4.4 oauthlib-3.3.1 onnxruntime-1.25.1 openai-1.57.0 opentelemetry-api-1.41.1 opentelemetry-exporter-otlp-proto-common-1.41.1 opentelemetry-exporter-otlp-proto-grpc-1.41.1 opentelemetry-instrumentation-0.62b1 opentelemetry-instrumentation-asgi-0.62b1 opentelemetry-instrumentation-fastapi-0.62b1 opentelemetry-proto-1.41.1 opentelemetry-sdk-1.41.1 opentelemetry-semantic-conventions-0.62b1 opentelemetry-util-http-0.62b1 orjson-3.11.8 overrides-7.7.0 packaging-26.2 pdfminer.six-20231228 pdfplumber-0.11.4 pillow-11.0.0 platformdirs-4.9.6 posthog-7.14.0 propcache-0.4.1 proto-plus-1.27.2 protobuf-5.29.6 pyasn1-0.6.3 pyasn1-modules-0.4.2 pycparser-3.0 pydantic-2.10.3 pydantic-core-2.27.1 pygments-2.20.0 pymupdf-1.24.14 pyparsing-3.3.2 pypdfium2-5.7.1 pypika-0.51.1 pyproject_hooks-1.2.0 pytesseract-0.3.13 python-dateutil-2.9.0.post0 python-dotenv-1.2.2 python-multipart-0.0.17 regex-2026.4.4 requests-2.33.1 requests-oauthlib-2.0.0 rich-15.0.0 shellingham-1.5.4 six-1.17.0 sniffio-1.3.1 sqlalchemy-2.0.49 starlette-0.41.3 tenacity-9.1.4 tiktoken-0.12.0 tokenizers-0.20.3 tqdm-4.67.3 typer-0.25.1 typing-extensions-4.15.0 typing-inspect-0.9.0 uritemplate-4.2.0 urllib3-2.6.3 uvicorn-0.32.1 uvloop-0.22.1 watchfiles-1.1.1 websocket-client-1.9.0 websockets-16.0 wrapt-2.1.2 yarl-1.23.0 zipp-3.23.1
+#10 64.86 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#10 64.93 
+#10 64.93 [notice] A new release of pip is available: 24.0 -> 26.1
+#10 64.93 [notice] To update, run: pip install --upgrade pip
+#10 DONE 70.5s
+#11 [6/7] COPY . .
+#11 DONE 0.2s
+#12 [7/7] RUN mkdir -p chroma_db static
+#12 DONE 0.1s
+#13 exporting to docker image format
+#13 exporting layers
+#13 exporting layers 18.8s done
+#13 exporting manifest sha256:93bdf8813b56e3f540fd39f4e4ee8cbb5154ccba9bbcde581cc5c9b563ae567f done
+#13 exporting config sha256:304158f052dab46494ce6a70a1c2162910a4a72c266207e108cc66cca6cbf871 done
+#13 DONE 20.7s
+#14 exporting cache to client directory
+#14 preparing build cache for export
+#14 writing cache image manifest sha256:0eccf47e2daaa7176372a9bc35231fc518a4094fc47420da6485df4379460e25 done
+#14 DONE 4.9s
+Pushing image to registry...
+Upload succeeded
+==> Deploying...
+==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-05-03 07:35:31.024279872 [W:onnxruntime:Default, device_discovery.cc:283 GetGpuDevices] Failed to detect devices under "/sys/class/drm/card0": device_discovery.cc:93 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"
+2026-05-03 07:35:34,230 INFO Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-05-03 07:35:35,237 ERROR Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given
+Traceback (most recent call last):
+  File "/usr/local/bin/uvicorn", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1514, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1435, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1298, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 853, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 412, in main
+    run(
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 579, in run
+    server.run()
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 69, in serve
+    await self._serve(sockets)
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 76, in _serve
+    config.load()
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 434, in load
+    self.loaded_app = import_from_string(self.app)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+    module = importlib.import_module(module_str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/main.py", line 29, in <module>
+    collection = chroma_client.get_or_create_collection(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/client.py", line 194, in get_or_create_collection
+    model = self._server.get_or_create_collection(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/telemetry/opentelemetry/__init__.py", line 150, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/segment.py", line 103, in wrapper
+    return self._rate_limit_enforcer.rate_limit(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/rate_limit/simple_rate_limit/__init__.py", line 23, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/segment.py", line 272, in get_or_create_collection
+    return self.create_collection(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/telemetry/opentelemetry/__init__.py", line 150, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/segment.py", line 103, in wrapper
+    return self._rate_limit_enforcer.rate_limit(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/rate_limit/simple_rate_limit/__init__.py", line 23, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/segment.py", line 226, in create_collection
+    coll, created = self._sysdb.create_collection(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/telemetry/opentelemetry/__init__.py", line 150, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/db/mixins/sysdb.py", line 230, in create_collection
+    existing = self.get_collections(name=name, tenant=tenant, database=database)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/telemetry/opentelemetry/__init__.py", line 150, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/db/mixins/sysdb.py", line 456, in get_collections
+    configuration = self._load_config_from_json_str_and_migrate(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/db/mixins/sysdb.py", line 807, in _load_config_from_json_str_and_migrate
+    return CollectionConfigurationInternal.from_json_str(json_str)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/configuration.py", line 188, in from_json_str
+    return cls.from_json(config_json)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/chromadb/api/configuration.py", line 209, in from_json
+    f"Trying to instantiate configuration of type {cls.__name__} from JSON with type {json_map['_type']}"
+                                                                                      ~~~~~~~~^^^^^^^^^
+KeyError: '_type'
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
