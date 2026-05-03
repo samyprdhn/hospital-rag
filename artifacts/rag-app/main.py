@@ -122,15 +122,103 @@ async def parse_with_llamaparse(file_path: str) -> str:
     if not LLAMAPARSE_API_KEY:
         raise HTTPException(status_code=400, detail="LLAMAPARSE_API_KEY is not configured.")
     from llama_parse import LlamaParse
-    # Enable Nepali (Devanagari script) support along with English
-    parser = LlamaParse(
+    
+    logger.info("🔍 Running dual-pass LlamaParse: English + Nepali extraction...")
+    
+    # ── First pass: English extraction ──
+    logger.info("📄 Pass 1/2: Extracting English text...")
+    parser_en = LlamaParse(
         api_key=LLAMAPARSE_API_KEY, 
         result_type="text",
-        language="ne",  # English + Nepali
+        language="en",
         verbose=False
     )
-    documents = await parser.aload_data(file_path)
-    return "\n\n".join([doc.text for doc in documents])
+    documents_en = await parser_en.aload_data(file_path)
+    text_en = "\n\n".join([doc.text for doc in documents_en])
+    logger.info(f"   ✓ English pass complete ({len(text_en)} characters)")
+    
+    # ── Second pass: Nepali extraction ──
+    logger.info("🇳🇵 Pass 2/2: Extracting Nepali text...")
+    parser_ne = LlamaParse(
+        api_key=LLAMAPARSE_API_KEY, 
+        result_type="text",
+        language="ne",
+        verbose=False
+    )
+    documents_ne = await parser_ne.aload_data(file_path)
+    text_ne = "\n\n".join([doc.text for doc in documents_ne])
+    logger.info(f"   ✓ Nepali pass complete ({len(text_ne)} characters)")
+    
+    # ── Merge results ──
+    logger.info("🔀 Merging extraction results...")
+    merged_text = _merge_parsed_texts(text_en, text_ne)
+    logger.info(f"   ✓ Merge complete ({len(merged_text)} characters)")
+    
+    return merged_text
+
+
+def _merge_parsed_texts(text_en: str, text_ne: str) -> str:
+    """
+    Intelligently merge English and Nepali extracted text.
+    
+    Strategy:
+    1. If text_ne is empty or too short, use English only (no Nepali content found)
+    2. If text_en is empty but text_ne exists, use Nepali only
+    3. Otherwise, interleave them intelligently for better context preservation
+    
+    Returns: Merged text optimized for RAG vector embedding
+    """
+    
+    # Remove extra whitespace
+    text_en = text_en.strip()
+    text_ne = text_ne.strip()
+    
+    # If no Nepali text was found, return English only
+    if not text_ne or len(text_ne) < 100:
+        logger.info(f"   → No significant Nepali text found. Using English extraction only.")
+        return text_en
+    
+    # If no English text but Nepali exists, return Nepali only
+    if not text_en or len(text_en) < 100:
+        logger.info(f"   → No significant English text found. Using Nepali extraction only.")
+        return text_ne
+    
+    # Both languages present - create comprehensive merged version
+    logger.info(f"   → Bilingual content detected. Merging {len(text_en)} chars (EN) + {len(text_ne)} chars (NE)")
+    
+    # Split into paragraphs
+    paragraphs_en = [p.strip() for p in text_en.split('\n\n') if p.strip()]
+    paragraphs_ne = [p.strip() for p in text_ne.split('\n\n') if p.strip()]
+    
+    merged = []
+    
+    # Strategy: If roughly same number of paragraphs, they're likely aligned translations
+    # Interleave them for maximum context preservation in RAG
+    if abs(len(paragraphs_en) - len(paragraphs_ne)) <= 2:
+        logger.info(f"   → Paragraph count similar ({len(paragraphs_en)} vs {len(paragraphs_ne)}), interleaving...")
+        # Interleave English and Nepali paragraphs
+        for i in range(max(len(paragraphs_en), len(paragraphs_ne))):
+            if i < len(paragraphs_en):
+                merged.append(paragraphs_en[i])
+            if i < len(paragraphs_ne):
+                # Add metadata marker for Nepali content
+                merged.append(f"[नेपाली / Nepali]\n{paragraphs_ne[i]}")
+    else:
+        # Different number of paragraphs - section them separately with markers
+        logger.info(f"   → Paragraph count different ({len(paragraphs_en)} vs {len(paragraphs_ne)}), sectioning...")
+        merged.append("=" * 50)
+        merged.append("ENGLISH EXTRACTION (अंग्रेजी पाठ)")
+        merged.append("=" * 50)
+        merged.extend(paragraphs_en)
+        merged.append("")
+        merged.append("=" * 50)
+        merged.append("NEPALI EXTRACTION (नेपाली पाठ)")
+        merged.append("=" * 50)
+        merged.extend(paragraphs_ne)
+    
+    merged_result = "\n\n".join(merged)
+    logger.info(f"   ✓ Final merged text: {len(merged_result)} characters")
+    return merged_result
 
 
 def parse_with_pymupdf(file_path: str) -> str:
@@ -410,7 +498,7 @@ async def query_documents(req: QueryRequest):
         [f"[Source: {m['filename']}, chunk {m['chunk_index']}]\n{d}" for d, m in zip(docs, metas)]
     )
 
-    prompt = f"""You are a medical and billing assistant. Use the context below to answer the question.
+    prompt = f"""You are a medical document and billing assistant. Use the context below to answer the question.
 If the answer is not in the context, say you don't know.
 
 Currency rules (strictly follow these):
