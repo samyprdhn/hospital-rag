@@ -3,230 +3,319 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RAG Document QA</title>
+  <title>BiratCare Intelligence</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f4f9; color: #1a2744; min-height: 100vh; }
 
-    header {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-bottom: 1px solid #334155;
-      padding: 16px 24px;
-      display: flex; align-items: center; gap: 12px;
+    /* ── TOP BAR ── */
+    .top-bar {
+      background: #0d2b5e;
+      color: #a8c4e8;
+      font-size: 12px;
+      padding: 6px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 20px;
     }
-    header .logo { font-size: 22px; }
-    header h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
-    header p { font-size: 12px; color: #64748b; margin-top: 1px; }
-    .badge { margin-left: auto; background: #10b981; color: #fff; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; }
+    .top-bar span { display: flex; align-items: center; gap: 5px; }
 
-    .layout { display: grid; grid-template-columns: 310px 1fr; height: calc(100vh - 65px); }
+    /* ── HEADER ── */
+    header {
+      background: #fff;
+      border-bottom: 3px solid #1565c0;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 68px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .header-logo {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none;
+    }
+    .logo-mark {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, #0d2b5e 0%, #1565c0 100%);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; flex-shrink: 0;
+    }
+    .logo-text h1 { font-size: 18px; font-weight: 800; color: #0d2b5e; letter-spacing: -.3px; }
+    .logo-text p { font-size: 11px; color: #1565c0; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-top: 1px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .live-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: #e8f5e9; color: #2e7d32;
+      border: 1px solid #a5d6a7;
+      border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600;
+    }
+    .live-dot { width: 7px; height: 7px; background: #43a047; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    /* ── LAYOUT ── */
+    .layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 103px); }
 
     /* ── SIDEBAR ── */
-    .sidebar { background: #111827; border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: hidden; }
-    .sidebar-section { padding: 14px 16px; border-bottom: 1px solid #1e293b; }
-    .sidebar-section h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: 10px; }
-    .select-group { display: flex; flex-direction: column; gap: 8px; }
-    select { width: 100%; background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 8px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; transition: border-color .15s; }
-    select:focus { border-color: #6366f1; }
-    .status-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; margin-top: 5px; }
+    .sidebar {
+      background: #fff;
+      border-right: 1px solid #dde6f0;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 2px 0 8px rgba(13,43,94,.05);
+    }
+    .sidebar-section { padding: 14px 16px; border-bottom: 1px solid #edf2f7; }
+    .sidebar-section h2 {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: #1565c0; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sidebar-section h2::before { content: ''; display: block; width: 3px; height: 12px; background: #1565c0; border-radius: 2px; }
+
+    .select-group { display: flex; flex-direction: column; gap: 7px; }
+    select {
+      width: 100%; background: #f7faff; border: 1px solid #c5d8f0;
+      color: #1a2744; padding: 8px 10px; border-radius: 7px;
+      font-size: 13px; cursor: pointer; outline: none;
+      transition: border-color .15s; font-family: inherit;
+    }
+    select:focus { border-color: #1565c0; background: #fff; }
+    .status-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; margin-top: 4px; }
     .dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; flex-shrink: 0; }
-    .dot.ok { background: #10b981; }
-    .dot.local { background: #6366f1; }
+    .dot.ok { background: #22c55e; }
+    .dot.local { background: #1565c0; }
 
-    .parser-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 12px; }
-    .parser-card .parser-name { font-weight: 600; color: #a5b4fc; margin-bottom: 3px; }
-    .parser-card .parser-desc { color: #94a3b8; line-height: 1.5; }
-    .parser-badge { display: inline-block; background: #0f172a; border: 1px solid #334155; border-radius: 999px; padding: 1px 8px; font-size: 10px; color: #64748b; margin-top: 5px; }
-    .parser-badge.free { border-color: #10b981; color: #4ade80; }
-    .parser-badge.cloud { border-color: #6366f1; color: #a5b4fc; }
+    .parser-card {
+      background: #f0f6ff; border: 1px solid #c5d8f0;
+      border-left: 3px solid #1565c0;
+      border-radius: 7px; padding: 10px 12px; margin-top: 8px; font-size: 12px;
+    }
+    .parser-card .parser-name { font-weight: 700; color: #0d2b5e; margin-bottom: 3px; }
+    .parser-card .parser-desc { color: #4b5563; line-height: 1.5; }
+    .parser-badge {
+      display: inline-block; background: #fff; border: 1px solid #c5d8f0;
+      border-radius: 999px; padding: 1px 8px; font-size: 10px; color: #6b7280; margin-top: 5px;
+    }
+    .parser-badge.free { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .parser-badge.cloud { border-color: #1565c0; color: #1565c0; background: #f0f6ff; }
 
-    .drop-zone { border: 2px dashed #334155; border-radius: 10px; padding: 18px; text-align: center; cursor: pointer; transition: all .2s; position: relative; }
-    .drop-zone:hover, .drop-zone.drag-over { border-color: #6366f1; background: #1e1b4b22; }
+    .drop-zone {
+      border: 2px dashed #c5d8f0; border-radius: 10px;
+      padding: 16px; text-align: center; cursor: pointer;
+      transition: all .2s; position: relative; background: #f7faff;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #1565c0; background: #e8f1fd; }
     .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-    .drop-zone .icon { font-size: 26px; margin-bottom: 6px; }
-    .drop-zone p { font-size: 12px; color: #94a3b8; }
-    .drop-zone p strong { color: #a5b4fc; }
-    .selected-file { margin-top: 6px; font-size: 11px; color: #4ade80; font-weight: 500; }
+    .drop-zone .icon { font-size: 24px; margin-bottom: 5px; }
+    .drop-zone p { font-size: 12px; color: #6b7280; }
+    .drop-zone p strong { color: #1565c0; }
+    .selected-file { margin-top: 5px; font-size: 11px; color: #16a34a; font-weight: 600; }
 
-    .btn { width: 100%; padding: 9px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-primary { background: #6366f1; color: #fff; margin-top: 10px; }
-    .btn-primary:hover { background: #4f46e5; }
-    .btn-primary:disabled { background: #3730a3; opacity: .6; cursor: not-allowed; }
-    .btn-danger { background: transparent; border: 1px solid #ef4444; color: #f87171; padding: 4px 8px; width: auto; font-size: 11px; border-radius: 5px; }
-    .btn-danger:hover { background: #ef444422; }
+    .btn { width: 100%; padding: 9px 14px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; }
+    .btn-primary { background: #1565c0; color: #fff; margin-top: 10px; letter-spacing: .02em; }
+    .btn-primary:hover { background: #0d47a1; }
+    .btn-primary:disabled { background: #90afd4; cursor: not-allowed; }
+    .btn-danger { background: transparent; border: 1px solid #fca5a5; color: #dc2626; padding: 3px 7px; width: auto; font-size: 11px; border-radius: 5px; }
+    .btn-danger:hover { background: #fef2f2; }
 
     .status-msg { margin-top: 8px; font-size: 12px; padding: 8px 10px; border-radius: 7px; display: none; }
     .status-msg.show { display: block; }
-    .status-msg.success { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
-    .status-msg.error { background: #2d0d0d; color: #f87171; border: 1px solid #7f1d1d; }
-    .status-msg.info { background: #0c1a2e; color: #93c5fd; border: 1px solid #1e3a5f; }
+    .status-msg.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .status-msg.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .status-msg.info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
 
     .doc-list { flex: 1; overflow-y: auto; padding: 12px 16px; }
-    .doc-list h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: 10px; }
-    .doc-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #1e293b; border-radius: 7px; margin-bottom: 6px; font-size: 12px; }
+    .doc-list h2 { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #1565c0; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .doc-list h2::before { content: ''; display: block; width: 3px; height: 12px; background: #1565c0; border-radius: 2px; }
+    .doc-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f7faff; border: 1px solid #dde6f0; border-radius: 7px; margin-bottom: 6px; font-size: 12px; transition: border-color .15s; }
+    .doc-item:hover { border-color: #1565c0; }
     .doc-item .doc-icon { font-size: 16px; flex-shrink: 0; }
     .doc-item .doc-info { flex: 1; min-width: 0; }
-    .doc-item .doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-    .doc-item .doc-meta { color: #64748b; font-size: 11px; margin-top: 2px; }
-    .no-docs { color: #475569; font-size: 12px; text-align: center; padding: 20px 0; }
+    .doc-item .doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: #0d2b5e; }
+    .doc-item .doc-meta { color: #6b7280; font-size: 11px; margin-top: 2px; }
+    .no-docs { color: #9ca3af; font-size: 12px; text-align: center; padding: 20px 0; }
 
     /* ── MAIN AREA ── */
-    .main { display: flex; flex-direction: column; overflow: hidden; }
+    .main { display: flex; flex-direction: column; overflow: hidden; background: #f0f4f9; }
 
     /* Tab bar */
-    .tab-bar { display: flex; border-bottom: 1px solid #1e293b; background: #0f1117; flex-shrink: 0; }
-    .tab-btn { padding: 12px 20px; font-size: 13px; font-weight: 600; color: #64748b; border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; display: flex; align-items: center; gap: 7px; }
-    .tab-btn:hover { color: #cbd5e1; }
-    .tab-btn.active { color: #a5b4fc; border-bottom-color: #6366f1; }
+    .tab-bar { display: flex; background: #fff; border-bottom: 1px solid #dde6f0; flex-shrink: 0; padding: 0 4px; }
+    .tab-btn {
+      padding: 14px 22px; font-size: 13px; font-weight: 700; color: #6b7280;
+      border: none; background: transparent; cursor: pointer;
+      border-bottom: 3px solid transparent; transition: all .15s;
+      display: flex; align-items: center; gap: 7px; font-family: inherit;
+      text-transform: uppercase; letter-spacing: .04em; font-size: 11px;
+    }
+    .tab-btn:hover { color: #1565c0; }
+    .tab-btn.active { color: #1565c0; border-bottom-color: #1565c0; }
     .tab-panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
     .tab-panel.active { display: flex; }
 
     /* ── CHAT TAB ── */
-    .chat-history { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #475569; text-align: center; gap: 12px; }
-    .empty-state .big-icon { font-size: 56px; }
-    .empty-state h3 { font-size: 16px; color: #94a3b8; }
-    .empty-state p { font-size: 13px; max-width: 320px; line-height: 1.6; }
-    .msg-pair { display: flex; flex-direction: column; gap: 12px; }
-    .bubble { max-width: 85%; padding: 14px 18px; border-radius: 14px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
-    .bubble-user { align-self: flex-end; background: #6366f1; color: #fff; border-bottom-right-radius: 4px; }
-    .bubble-assistant { align-self: flex-start; background: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid #334155; }
-    .sources-box { align-self: flex-start; max-width: 85%; background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 12px 14px; font-size: 12px; }
-    .sources-box summary { cursor: pointer; color: #818cf8; font-weight: 600; user-select: none; list-style: none; }
+    .chat-history { flex: 1; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; text-align: center; gap: 14px; }
+    .empty-state .big-icon {
+      width: 80px; height: 80px; background: linear-gradient(135deg, #0d2b5e, #1565c0);
+      border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 38px;
+    }
+    .empty-state h3 { font-size: 18px; color: #0d2b5e; font-weight: 800; }
+    .empty-state p { font-size: 13px; max-width: 320px; line-height: 1.65; color: #6b7280; }
+
+    .msg-pair { display: flex; flex-direction: column; gap: 10px; }
+    .bubble { max-width: 82%; padding: 13px 17px; border-radius: 14px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
+    .bubble-user { align-self: flex-end; background: linear-gradient(135deg, #0d2b5e, #1565c0); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(21,101,192,.3); }
+    .bubble-assistant { align-self: flex-start; background: #fff; color: #1a2744; border-bottom-left-radius: 4px; border: 1px solid #dde6f0; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+    .sources-box { align-self: flex-start; max-width: 82%; background: #fff; border: 1px solid #dde6f0; border-radius: 10px; padding: 12px 14px; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .sources-box summary { cursor: pointer; color: #1565c0; font-weight: 700; user-select: none; list-style: none; }
     .sources-box summary::-webkit-details-marker { display: none; }
     .sources-box summary::before { content: '▶ '; font-size: 10px; }
     .sources-box[open] summary::before { content: '▼ '; }
-    .source-item { margin-top: 8px; padding: 8px 10px; background: #1e293b; border-radius: 7px; border-left: 3px solid #6366f1; }
-    .source-item .source-file { font-weight: 600; color: #a5b4fc; margin-bottom: 4px; }
-    .source-item .source-snippet { color: #94a3b8; line-height: 1.5; }
-    .typing-indicator { align-self: flex-start; background: #1e293b; border: 1px solid #334155; border-radius: 14px; border-bottom-left-radius: 4px; padding: 14px 20px; display: flex; gap: 5px; align-items: center; }
-    .typing-indicator span { width: 7px; height: 7px; background: #6366f1; border-radius: 50%; animation: bounce 1.2s infinite; }
+    .source-item { margin-top: 8px; padding: 8px 10px; background: #f7faff; border-radius: 7px; border-left: 3px solid #1565c0; }
+    .source-item .source-file { font-weight: 700; color: #0d2b5e; margin-bottom: 4px; }
+    .source-item .source-snippet { color: #4b5563; line-height: 1.5; }
+    .typing-indicator { align-self: flex-start; background: #fff; border: 1px solid #dde6f0; border-radius: 14px; border-bottom-left-radius: 4px; padding: 14px 20px; display: flex; gap: 5px; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+    .typing-indicator span { width: 7px; height: 7px; background: #1565c0; border-radius: 50%; animation: bounce 1.2s infinite; }
     .typing-indicator span:nth-child(2) { animation-delay: .2s; }
     .typing-indicator span:nth-child(3) { animation-delay: .4s; }
     @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
-    .query-bar { border-top: 1px solid #1e293b; padding: 16px 24px; display: flex; gap: 10px; background: #0f1117; }
-    .query-bar textarea { flex: 1; background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 12px 14px; border-radius: 10px; font-size: 14px; resize: none; outline: none; font-family: inherit; height: 48px; max-height: 140px; transition: border-color .15s; line-height: 1.5; }
-    .query-bar textarea:focus { border-color: #6366f1; }
-    .query-bar textarea::placeholder { color: #475569; }
-    .send-btn { width: 48px; height: 48px; background: #6366f1; border: none; border-radius: 10px; color: #fff; font-size: 20px; cursor: pointer; flex-shrink: 0; transition: background .15s; display: flex; align-items: center; justify-content: center; }
-    .send-btn:hover { background: #4f46e5; }
-    .send-btn:disabled { background: #3730a3; opacity: .6; cursor: not-allowed; }
-    .model-pill { display: inline-flex; align-items: center; gap: 4px; background: #1e293b; border: 1px solid #334155; border-radius: 999px; padding: 2px 9px; font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+
+    .query-bar { border-top: 1px solid #dde6f0; padding: 16px 24px; display: flex; gap: 10px; background: #fff; }
+    .query-bar textarea {
+      flex: 1; background: #f7faff; border: 1px solid #c5d8f0;
+      color: #1a2744; padding: 12px 14px; border-radius: 10px;
+      font-size: 14px; resize: none; outline: none; font-family: inherit;
+      height: 48px; max-height: 140px; transition: border-color .15s; line-height: 1.5;
+    }
+    .query-bar textarea:focus { border-color: #1565c0; background: #fff; box-shadow: 0 0 0 3px rgba(21,101,192,.1); }
+    .query-bar textarea::placeholder { color: #9ca3af; }
+    .send-btn {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #0d2b5e, #1565c0);
+      border: none; border-radius: 10px; color: #fff; font-size: 18px;
+      cursor: pointer; flex-shrink: 0; transition: opacity .15s;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(21,101,192,.4);
+    }
+    .send-btn:hover { opacity: .88; }
+    .send-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .model-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: 999px; padding: 3px 10px; font-size: 11px; color: #1d4ed8; margin-bottom: 6px; font-weight: 600;
+    }
 
     /* ── COMPARE TAB ── */
     .compare-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
     .compare-toolbar {
-      padding: 16px 20px;
-      border-bottom: 1px solid #1e293b;
-      background: #111827;
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-      flex-wrap: wrap;
+      padding: 14px 20px; border-bottom: 1px solid #dde6f0;
+      background: #fff; display: flex; gap: 12px;
+      align-items: flex-end; flex-wrap: wrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,.04);
     }
-    .compare-toolbar .cmp-group { display: flex; flex-direction: column; gap: 6px; }
-    .compare-toolbar label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #64748b; }
-    .compare-toolbar select { width: 170px; }
+    .compare-toolbar .cmp-group { display: flex; flex-direction: column; gap: 5px; }
+    .compare-toolbar label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #1565c0; }
+    .compare-toolbar select { width: 165px; }
     .vs-badge {
-      align-self: flex-end;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 13px;
-      font-weight: 800;
-      color: #64748b;
+      align-self: flex-end; background: #0d2b5e; color: #fff;
+      border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 900; letter-spacing: .06em;
     }
-    .cmp-upload-area { display: flex; flex-direction: column; gap: 6px; }
+    .cmp-upload-area { display: flex; flex-direction: column; gap: 5px; }
     .cmp-file-row { display: flex; align-items: center; gap: 8px; }
-    .cmp-file-name { font-size: 12px; color: #4ade80; }
-    .btn-compare { background: #7c3aed; color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .btn-compare:hover { background: #6d28d9; }
+    .cmp-file-name { font-size: 12px; color: #16a34a; font-weight: 600; }
+    .btn-compare {
+      background: linear-gradient(135deg, #0d2b5e, #1565c0); color: #fff;
+      border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap; font-family: inherit; box-shadow: 0 2px 8px rgba(21,101,192,.3);
+    }
+    .btn-compare:hover { opacity: .88; }
     .btn-compare:disabled { opacity: .5; cursor: not-allowed; }
 
     .compare-body { flex: 1; display: flex; overflow: hidden; }
-
-    .cmp-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border-right: 1px solid #1e293b;
-    }
+    .cmp-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #dde6f0; }
     .cmp-col:last-child { border-right: none; }
-
     .cmp-col-header {
-      padding: 12px 16px;
-      background: #111827;
-      border-bottom: 1px solid #1e293b;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
+      padding: 12px 16px; background: #fff; border-bottom: 1px solid #dde6f0;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     }
-    .cmp-parser-name { font-size: 14px; font-weight: 700; }
-    .cmp-col.col-a .cmp-parser-name { color: #818cf8; }
-    .cmp-col.col-b .cmp-parser-name { color: #34d399; }
+    .cmp-parser-name { font-size: 14px; font-weight: 800; }
+    .cmp-col.col-a .cmp-parser-name { color: #0d2b5e; }
+    .cmp-col.col-b .cmp-parser-name { color: #065f46; }
 
-    .stat-row { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid #1e293b; background: #0f1117; flex-shrink: 0; flex-wrap: wrap; }
-    .stat-chip {
-      display: flex; flex-direction: column;
-      background: #1e293b; border: 1px solid #334155;
-      border-radius: 8px; padding: 6px 10px;
-      min-width: 70px;
-    }
-    .stat-chip .stat-val { font-size: 16px; font-weight: 700; color: #f1f5f9; }
-    .stat-chip .stat-lbl { font-size: 10px; color: #64748b; margin-top: 1px; text-transform: uppercase; }
-    .stat-chip.winner { border-color: #10b981; background: #052e16; }
-    .stat-chip.winner .stat-val { color: #4ade80; }
-    .stat-chip.worse { opacity: .55; }
+    .stat-row { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid #dde6f0; background: #f7faff; flex-shrink: 0; flex-wrap: wrap; }
+    .stat-chip { display: flex; flex-direction: column; background: #fff; border: 1px solid #dde6f0; border-radius: 8px; padding: 7px 12px; min-width: 72px; }
+    .stat-chip .stat-val { font-size: 16px; font-weight: 800; color: #0d2b5e; }
+    .stat-chip .stat-lbl { font-size: 10px; color: #9ca3af; margin-top: 1px; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-chip.winner { border-color: #22c55e; background: #f0fdf4; }
+    .stat-chip.winner .stat-val { color: #15803d; }
+    .stat-chip.worse { opacity: .5; }
 
-    .cmp-text-box { flex: 1; overflow-y: auto; padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; color: #cbd5e1; white-space: pre-wrap; word-break: break-word; }
-    .cmp-error { flex: 1; display: flex; align-items: center; justify-content: center; color: #f87171; font-size: 13px; text-align: center; padding: 24px; }
-    .cmp-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #475569; text-align: center; gap: 8px; padding: 24px; }
+    .cmp-text-box { flex: 1; overflow-y: auto; padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.75; color: #374151; white-space: pre-wrap; word-break: break-word; background: #fafbfc; }
+    .cmp-error { flex: 1; display: flex; align-items: center; justify-content: center; color: #dc2626; font-size: 13px; text-align: center; padding: 24px; }
+    .cmp-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; text-align: center; gap: 10px; padding: 24px; }
     .cmp-empty .e-icon { font-size: 36px; }
     .cmp-empty p { font-size: 13px; }
 
     .btn-index {
-      border: none; border-radius: 7px; padding: 8px 14px; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap;
+      width: 100%; border: none; border-radius: 7px; padding: 9px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+      white-space: nowrap; font-family: inherit; letter-spacing: .02em;
     }
-    .col-a .btn-index { background: #312e81; color: #a5b4fc; }
-    .col-a .btn-index:hover { background: #3730a3; }
-    .col-b .btn-index { background: #052e16; color: #4ade80; }
-    .col-b .btn-index:hover { background: #14532d; }
+    .col-a .btn-index { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .col-a .btn-index:hover { background: #1565c0; color: #fff; }
+    .col-b .btn-index { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .col-b .btn-index:hover { background: #16a34a; color: #fff; }
     .btn-index:disabled { opacity: .5; cursor: not-allowed; }
-    .btn-index.done { background: #1e293b; color: #64748b; cursor: default; }
-    .index-result { font-size: 11px; margin-left: 4px; }
+    .btn-index.done { background: #f0fdf4 !important; color: #15803d !important; border-color: #bbf7d0 !important; cursor: default; }
 
-    .cmp-col-footer {
-      padding: 10px 14px;
-      border-top: 1px solid #1e293b;
-      background: #111827;
-      flex-shrink: 0;
-    }
-    .compare-status { padding: 10px 20px; border-bottom: 1px solid #1e293b; background: #0c1a2e; color: #93c5fd; font-size: 12px; display: none; }
+    .cmp-col-footer { padding: 10px 14px; border-top: 1px solid #dde6f0; background: #fff; flex-shrink: 0; }
+    .compare-status { padding: 10px 20px; border-bottom: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; font-size: 12px; font-weight: 500; display: none; }
     .compare-status.show { display: block; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #0d2b5e; color: #fff;
+      padding: 12px 22px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(13,43,94,.35); transition: transform .3s ease; z-index: 999; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #15803d; }
+    .toast.error { background: #dc2626; }
 
     /* Shared */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #c5d8f0; border-radius: 3px; }
     .spinner { animation: spin .8s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
+<!-- Top bar -->
+<div class="top-bar">
+  <span>🏥 Birat Medical Campus, Biratnagar, Nepal</span>
+  <span>📞 +977-021-422601</span>
+  <span>✉️ intelligence@biratcare.com</span>
+</div>
+
+<!-- Header -->
 <header>
-  <span class="logo">🧠</span>
-  <div>
-    <h1>RAG Document QA</h1>
-    <p>Upload documents, ask questions, get answers with sources</p>
+  <div class="header-logo">
+    <div class="logo-mark">🧠</div>
+    <div class="logo-text">
+      <h1>BiratCare Intelligence</h1>
+      <p>AI-Powered Medical Document Analysis</p>
+    </div>
   </div>
-  <span class="badge">● Live</span>
+  <div class="header-right">
+    <div class="live-pill"><span class="live-dot"></span> System Online</div>
+  </div>
 </header>
 
 <div class="layout">
@@ -235,7 +324,7 @@
   <aside class="sidebar">
 
     <div class="sidebar-section">
-      <h2>LLM Provider</h2>
+      <h2>AI Provider</h2>
       <div class="select-group">
         <select id="providerSelect" onchange="onProviderChange()"><option>Loading...</option></select>
         <select id="modelSelect"><option>Select provider first</option></select>
@@ -273,7 +362,7 @@
 
     <div class="doc-list">
       <h2>Indexed Documents</h2>
-      <div id="docList"><div class="no-docs">No documents yet</div></div>
+      <div id="docList"><div class="no-docs">No documents indexed yet</div></div>
     </div>
 
   </aside>
@@ -283,12 +372,8 @@
 
     <!-- Tab bar -->
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('chat')" id="tab-chat">
-        💬 Chat
-      </button>
-      <button class="tab-btn" onclick="switchTab('compare')" id="tab-compare">
-        ⚖️ Compare Parsers
-      </button>
+      <button class="tab-btn active" onclick="switchTab('chat')" id="tab-chat">💬 Ask a Question</button>
+      <button class="tab-btn" onclick="switchTab('compare')" id="tab-compare">⚖️ Compare Parsers</button>
     </div>
 
     <!-- ── CHAT TAB ── -->
@@ -296,12 +381,12 @@
       <div class="chat-history" id="chatHistory">
         <div class="empty-state" id="emptyState">
           <div class="big-icon">💬</div>
-          <h3>Ask your documents anything</h3>
-          <p>Upload a document on the left, then type your question below. The AI will search through your documents and answer with sources.</p>
+          <h3>Ask your medical documents anything</h3>
+          <p>Upload a patient record, bill, or clinical document on the left, then ask a question. BiratCare Intelligence will retrieve relevant context and answer with cited sources.</p>
         </div>
       </div>
       <div class="query-bar">
-        <textarea id="queryInput" placeholder="Ask a question about your documents..."
+        <textarea id="queryInput" placeholder="e.g. What is the patient's total amount due? What procedures were performed?"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="send-btn" id="sendBtn" onclick="sendQuery()" title="Send">&#10148;</button>
       </div>
@@ -311,7 +396,6 @@
     <div class="tab-panel" id="panel-compare">
       <div class="compare-panel">
 
-        <!-- Toolbar -->
         <div class="compare-toolbar">
           <div class="cmp-group">
             <label>Parser A</label>
@@ -323,26 +407,21 @@
             <select id="cmpParserB"></select>
           </div>
           <div class="cmp-upload-area">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#64748b;">File</label>
+            <label style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#1565c0;">File</label>
             <div class="cmp-file-row">
-              <label style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;white-space:nowrap;color:#e2e8f0;">
+              <label style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:7px 12px;font-size:13px;cursor:pointer;white-space:nowrap;color:#1d4ed8;font-weight:600;">
                 📂 Choose file
                 <input type="file" id="cmpFileInput" accept=".pdf,.png,.jpg,.jpeg,.tiff,.bmp,.docx,.txt" onchange="onFileSelected(this,'cmpFileName')" style="display:none" />
               </label>
               <span class="cmp-file-name" id="cmpFileName">No file selected</span>
             </div>
           </div>
-          <button class="btn-compare" id="cmpBtn" onclick="runCompare()">
-            ⚖️ Compare
-          </button>
+          <button class="btn-compare" id="cmpBtn" onclick="runCompare()">⚖️ Compare</button>
         </div>
 
         <div class="compare-status" id="compareStatus"></div>
 
-        <!-- Side-by-side columns -->
         <div class="compare-body">
-
-          <!-- Column A -->
           <div class="cmp-col col-a" id="colA">
             <div class="cmp-col-header">
               <span class="cmp-parser-name" id="colAName">Parser A</span>
@@ -352,8 +431,6 @@
               <p>Select two parsers and a file,<br>then click Compare</p>
             </div>
           </div>
-
-          <!-- Column B -->
           <div class="cmp-col col-b" id="colB">
             <div class="cmp-col-header">
               <span class="cmp-parser-name" id="colBName">Parser B</span>
@@ -363,7 +440,6 @@
               <p>Select two parsers and a file,<br>then click Compare</p>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -380,7 +456,6 @@
     await Promise.all([loadProviders(), loadParsers(), loadDocuments()]);
   }
 
-  // ── Tabs ───────────────────────────────────────────────────────────────────
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -388,7 +463,6 @@
     document.getElementById('panel-' + name).classList.add('active');
   }
 
-  // ── Providers ──────────────────────────────────────────────────────────────
   async function loadProviders() {
     try {
       const res = await fetch('/providers');
@@ -429,7 +503,6 @@
     txt.textContent = p.configured ? 'API key configured' : 'API key not set';
   }
 
-  // ── Parsers ────────────────────────────────────────────────────────────────
   async function loadParsers() {
     try {
       const res = await fetch('/parsers');
@@ -443,8 +516,7 @@
   function populateParserSelect(id, defaultKey, onChange) {
     const sel = document.getElementById(id);
     sel.innerHTML = '';
-    const keys = Object.keys(parsers);
-    keys.forEach((key, i) => {
+    Object.keys(parsers).forEach(key => {
       const p = parsers[key];
       const opt = document.createElement('option');
       opt.value = key;
@@ -475,13 +547,12 @@
     document.getElementById('fileInput').accept = p.formats.join(',');
   }
 
-  // ── Documents ──────────────────────────────────────────────────────────────
   async function loadDocuments() {
     try {
       const res = await fetch('/documents');
       const docs = await res.json();
       const container = document.getElementById('docList');
-      if (!docs.length) { container.innerHTML = '<div class="no-docs">No documents yet</div>'; return; }
+      if (!docs.length) { container.innerHTML = '<div class="no-docs">No documents indexed yet</div>'; return; }
       container.innerHTML = docs.map(d => `
         <div class="doc-item">
           <span class="doc-icon">${getFileIcon(d.filename)}</span>
@@ -510,7 +581,6 @@
     } catch(e) { alert(e.message); }
   }
 
-  // ── Upload ─────────────────────────────────────────────────────────────────
   function onFileSelected(input, labelId) {
     document.getElementById(labelId).textContent = input.files[0]?.name || '';
   }
@@ -559,44 +629,35 @@
     el.className = `status-msg show ${type}`;
   }
 
-  // ── Compare ────────────────────────────────────────────────────────────────
   async function runCompare() {
     const parserA = document.getElementById('cmpParserA').value;
     const parserB = document.getElementById('cmpParserB').value;
     const input = document.getElementById('cmpFileInput');
     const file = input.files[0];
-
     if (!file) { alert('Please select a file to compare.'); return; }
     if (parserA === parserB) { alert('Please select two different parsers.'); return; }
-
     const btn = document.getElementById('cmpBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner">⟳</span> Comparing...';
-
     const statusEl = document.getElementById('compareStatus');
     statusEl.textContent = `Parsing "${file.name}" with ${parsers[parserA]?.name} and ${parsers[parserB]?.name}... this may take a moment.`;
     statusEl.className = 'compare-status show';
-
-    // Reset columns to loading state
     setColLoading('A', parsers[parserA]?.name || parserA);
     setColLoading('B', parsers[parserB]?.name || parserB);
-
     const form = new FormData();
     form.append('file', file);
     form.append('parser_a', parserA);
     form.append('parser_b', parserB);
-
     try {
       const res = await fetch('/compare', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Compare failed');
-
       statusEl.textContent = `✓ Comparison complete for "${data.filename}" — pick a parser to index it directly below.`;
       renderCol('A', parserA, data.filename, data.a, data.b);
       renderCol('B', parserB, data.filename, data.b, data.a);
     } catch(e) {
       statusEl.textContent = '✗ ' + e.message;
-      statusEl.style.color = '#f87171';
+      statusEl.style.color = '#dc2626';
     } finally {
       btn.disabled = false;
       btn.innerHTML = '⚖️ Compare';
@@ -606,11 +667,10 @@
   function setColLoading(side, name) {
     const col = document.getElementById('col' + side);
     document.getElementById('col' + side + 'Name').textContent = name;
-    // Clear old stats/text, keep header
     Array.from(col.children).forEach(c => { if (!c.classList.contains('cmp-col-header')) c.remove(); });
     const loading = document.createElement('div');
     loading.className = 'cmp-empty';
-    loading.innerHTML = `<span class="spinner" style="font-size:24px">⟳</span><p>Parsing...</p>`;
+    loading.innerHTML = `<span class="spinner" style="font-size:24px;color:#1565c0">⟳</span><p>Parsing...</p>`;
     col.appendChild(loading);
   }
 
@@ -618,7 +678,6 @@
     const col = document.getElementById('col' + side);
     document.getElementById('col' + side + 'Name').textContent = result.parser;
     Array.from(col.children).forEach(c => { if (!c.classList.contains('cmp-col-header')) c.remove(); });
-
     if (result.error) {
       const errEl = document.createElement('div');
       errEl.className = 'cmp-error';
@@ -626,15 +685,12 @@
       col.appendChild(errEl);
       return;
     }
-
-    // Stats row
     const stats = [
       { key: 'chars',      label: 'Chars',  val: result.chars,      fmt: n => n.toLocaleString() },
       { key: 'words',      label: 'Words',  val: result.words,      fmt: n => n.toLocaleString() },
       { key: 'chunks',     label: 'Chunks', val: result.chunks,     fmt: n => n.toString() },
       { key: 'elapsed_ms', label: 'Time',   val: result.elapsed_ms, fmt: n => n >= 1000 ? (n/1000).toFixed(1)+'s' : n+'ms', lower: true },
     ];
-
     const statRow = document.createElement('div');
     statRow.className = 'stat-row';
     stats.forEach(s => {
@@ -647,14 +703,10 @@
       statRow.appendChild(chip);
     });
     col.appendChild(statRow);
-
-    // Text preview
     const textBox = document.createElement('pre');
     textBox.className = 'cmp-text-box';
     textBox.textContent = result.preview || '(no text extracted)';
     col.appendChild(textBox);
-
-    // Index button footer
     const footer = document.createElement('div');
     footer.className = 'cmp-col-footer';
     const btnId = `indexBtn${side}`;
@@ -706,7 +758,6 @@
     toast._timer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
   }
 
-  // ── Chat ───────────────────────────────────────────────────────────────────
   function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); } }
   function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
 
@@ -745,14 +796,14 @@
         const src = document.createElement('details');
         src.className = 'sources-box';
         src.innerHTML = `<summary>${data.sources.length} source${data.sources.length > 1 ? 's' : ''} used</summary>
-          ${data.sources.map(s => `<div class="source-item"><div class="source-file">📄 ${escapeHtml(s.filename)} — chunk ${s.chunk_index} <span style="color:#64748b;font-weight:400">· ${escapeHtml(s.parser)}</span></div><div class="source-snippet">${escapeHtml(s.snippet)}</div></div>`).join('')}`;
+          ${data.sources.map(s => `<div class="source-item"><div class="source-file">📄 ${escapeHtml(s.filename)} — chunk ${s.chunk_index} <span style="color:#9ca3af;font-weight:400">· ${escapeHtml(s.parser)}</span></div><div class="source-snippet">${escapeHtml(s.snippet)}</div></div>`).join('')}`;
         pair.appendChild(src);
       }
     } catch(e) {
       typingEl.remove();
       const errEl = document.createElement('div');
       errEl.className = 'bubble bubble-assistant';
-      errEl.style.cssText = 'border-color:#7f1d1d;color:#f87171;';
+      errEl.style.cssText = 'border-color:#fecaca;color:#dc2626;';
       errEl.textContent = '✗ ' + e.message;
       pair.appendChild(errEl);
     } finally {
