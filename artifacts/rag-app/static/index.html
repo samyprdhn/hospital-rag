@@ -150,6 +150,46 @@
     }
     @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
 
+    .auth-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+    }
+    .auth-pill:hover { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border-color: #2563eb; transform: translateY(-1.5px); }
+    
+    /* Auth Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; z-index: 10000;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.show { display: flex; }
+    .auth-modal {
+      background: #ffffff; border-radius: var(--radius-lg); width: 100%; max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;
+      border: 1px solid var(--border-color);
+      transform: scale(0.96); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.show .auth-modal { transform: scale(1); }
+    .auth-modal-header {
+      padding: 24px 28px 16px; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;
+    }
+    .auth-modal-header h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 800; color: #0f172a; }
+    .auth-close-btn { background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; padding: 4px; line-height: 1; }
+    .auth-close-btn:hover { color: #0f172a; }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--border-color); background: #f8fafc; }
+    .auth-tab-btn { flex: 1; padding: 12px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .auth-tab-btn.active { color: #1d4ed8; border-bottom-color: #2563eb; background: #fff; }
+    .auth-form { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+    .auth-form label { font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px; }
+    .auth-form input { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: var(--radius-sm); font-size: 13.5px; outline: none; transition: border-color 0.2s; }
+    .auth-form input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .auth-err { font-size: 12px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 10px 12px; border-radius: var(--radius-sm); display: none; }
+
     /* ── LAYOUT ── */
     .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 105px); }
 
@@ -586,6 +626,7 @@
     </div>
   </div>
   <div class="header-right">
+    <button id="authBtn" class="auth-pill" onclick="openAuthModal('signin')">👤 Sign In / Register</button>
     <div class="live-pill"><span class="live-dot"></span> System Online</div>
   </div>
 </header>
@@ -726,13 +767,190 @@
   </main>
 </div>
 
+<!-- Auth Modal -->
+<div id="authModal" class="modal-overlay" onclick="if(event.target===this) closeAuthModal()">
+  <div class="auth-modal">
+    <div class="auth-modal-header">
+      <h3 id="authTitle">Sign In to BiratCare</h3>
+      <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="auth-tabs">
+      <button type="button" id="tabSignin" class="auth-tab-btn active" onclick="switchAuthTab('signin')">Sign In</button>
+      <button type="button" id="tabSignup" class="auth-tab-btn" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <form id="authForm" class="auth-form" data-mode="signin" onsubmit="handleAuthSubmit(event)">
+      <div id="authErr" class="auth-err"></div>
+      <div>
+        <label for="authUsername">Username</label>
+        <input type="text" id="authUsername" placeholder="Enter username" required autocomplete="username">
+      </div>
+      <div id="emailGroup" style="display: none;">
+        <label for="authEmail">Email Address</label>
+        <input type="email" id="authEmail" placeholder="your.email@biratcare.com" autocomplete="email">
+      </div>
+      <div>
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="Enter password (min 6 chars)" required autocomplete="current-password">
+      </div>
+      <button type="submit" id="authSubmitBtn" class="btn-primary" style="width: 100%; margin-top: 8px;">Sign In</button>
+    </form>
+  </div>
+</div>
+
 <script>
   let providers = {};
   let parsers = {};
   let isQuerying = false;
+  let currentUser = null;
+
+  function getAuthToken() {
+    return localStorage.getItem('auth_token');
+  }
+
+  function getAuthHeaders(extra = {}) {
+    const token = getAuthToken();
+    const h = { ...extra };
+    if (token) h['Authorization'] = `Bearer ${token}`;
+    return h;
+  }
+
+  async function authFetch(url, options = {}) {
+    options.headers = getAuthHeaders(options.headers || {});
+    const res = await fetch(url, options);
+    if (res.status === 401 && url !== '/auth/me' && url !== '/auth/signin') {
+      openAuthModal('signin');
+      throw new Error('Please sign in or register to access documents and RAG queries.');
+    }
+    return res;
+  }
+
+  async function checkCurrentUser() {
+    const token = getAuthToken();
+    if (!token) {
+      updateAuthUI(null);
+      return;
+    }
+    try {
+      const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        currentUser = await res.json();
+        updateAuthUI(currentUser);
+      } else {
+        localStorage.removeItem('auth_token');
+        currentUser = null;
+        updateAuthUI(null);
+      }
+    } catch(e) {
+      console.error('Auth check error:', e);
+      updateAuthUI(null);
+    }
+  }
+
+  function updateAuthUI(user) {
+    currentUser = user;
+    const btn = document.getElementById('authBtn');
+    if (!btn) return;
+    if (user) {
+      btn.innerHTML = `👤 ${escapeHtml(user.username)} <span style="font-weight:400;opacity:0.85;margin-left:6px;" onclick="event.stopPropagation(); signoutUser();">· Sign Out</span>`;
+      btn.onclick = () => signoutUser();
+    } else {
+      btn.innerHTML = `👤 Sign In / Register`;
+      btn.onclick = () => openAuthModal('signin');
+    }
+  }
+
+  function openAuthModal(tab = 'signin') {
+    const overlay = document.getElementById('authModal');
+    if (!overlay) return;
+    switchAuthTab(tab);
+    overlay.classList.add('show');
+    document.getElementById('authErr').style.display = 'none';
+  }
+
+  function closeAuthModal() {
+    const overlay = document.getElementById('authModal');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  function switchAuthTab(tab) {
+    const isSignin = tab === 'signin';
+    document.getElementById('tabSignin').classList.toggle('active', isSignin);
+    document.getElementById('tabSignup').classList.toggle('active', !isSignin);
+    document.getElementById('authTitle').textContent = isSignin ? 'Sign In to BiratCare' : 'Create BiratCare Account';
+    document.getElementById('emailGroup').style.display = isSignin ? 'none' : 'block';
+    document.getElementById('authSubmitBtn').textContent = isSignin ? 'Sign In' : 'Register Account';
+    document.getElementById('authErr').style.display = 'none';
+    document.getElementById('authForm').dataset.mode = tab;
+  }
+
+  async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const mode = document.getElementById('authForm').dataset.mode || 'signin';
+    const username = document.getElementById('authUsername').value.trim();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authErr');
+    errEl.style.display = 'none';
+
+    if (!username || !password || (mode === 'signup' && !email)) {
+      errEl.textContent = 'Please fill out all required fields.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('authSubmitBtn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner">⟳</span> ${mode === 'signin' ? 'Signing in...' : 'Registering...'}`;
+
+    try {
+      const endpoint = mode === 'signin' ? '/auth/signin' : '/auth/signup';
+      const body = mode === 'signin' ? { username, password } : { username, email, password };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Authentication failed');
+
+      localStorage.setItem('auth_token', data.token);
+      currentUser = data.user;
+      updateAuthUI(currentUser);
+      closeAuthModal();
+      showToast(`✓ Welcome, ${data.user.username}!`, 'success');
+      await loadDocuments();
+    } catch(err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+
+  async function signoutUser() {
+    const token = getAuthToken();
+    if (token) {
+      try { await fetch('/auth/signout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); } catch(e){}
+    }
+    localStorage.removeItem('auth_token');
+    currentUser = null;
+    updateAuthUI(null);
+    showToast('Signed out successfully', 'info');
+    const container = document.getElementById('docList');
+    if (container) container.innerHTML = '<div class="no-docs" style="padding:16px;">👤 Sign in to view and upload private documents</div>';
+  }
 
   async function boot() {
-    await Promise.all([loadProviders(), loadParsers(), loadDocuments()]);
+    await checkCurrentUser();
+    await Promise.all([loadProviders(), loadParsers()]);
+    if (currentUser) {
+      await loadDocuments();
+    } else {
+      const container = document.getElementById('docList');
+      if (container) container.innerHTML = '<div class="no-docs" style="padding:16px;">👤 Sign in to view and upload private documents</div>';
+    }
   }
 
   function fillAndSend(text) {
@@ -837,7 +1055,7 @@
 
   async function loadDocuments() {
     try {
-      const res = await fetch('/documents');
+      const res = await authFetch('/documents');
       const docs = await res.json();
       const container = document.getElementById('docList');
       if (!docs.length) { container.innerHTML = '<div class="no-docs">No documents indexed yet</div>'; return; }
@@ -862,7 +1080,7 @@
   async function deleteDoc(filename) {
     if (!confirm(`Delete "${filename}" from the index?`)) return;
     try {
-      const res = await fetch(`/documents/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      const res = await authFetch(`/documents/${encodeURIComponent(filename)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Delete failed');
       await loadDocuments();
@@ -896,7 +1114,7 @@
     form.append('file', file);
     form.append('parser', parser);
     try {
-      const res = await fetch('/upload', { method: 'POST', body: form });
+      const res = await authFetch('/upload', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Upload failed');
       showStatus('uploadStatus', `✓ ${data.chunks_stored} chunks stored via ${data.parser}`, 'success');
@@ -937,7 +1155,7 @@
     form.append('parser_a', parserA);
     form.append('parser_b', parserB);
     try {
-      const res = await fetch('/compare', { method: 'POST', body: form });
+      const res = await authFetch('/compare', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Compare failed');
       statusEl.textContent = `✓ Benchmark finished for "${data.filename}" — click "Index" on the winner to save directly.`;
@@ -1013,7 +1231,7 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner">⟳</span> Indexing...';
     try {
-      const res = await fetch('/index-text', {
+      const res = await authFetch('/index-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename, parser_key: parserKey, text }),
@@ -1072,7 +1290,7 @@
     history.appendChild(typingEl);
     history.scrollTop = history.scrollHeight;
     try {
-      const res = await fetch('/query', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query, provider, model, top_k: 5}) });
+      const res = await authFetch('/query', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query, provider, model, top_k: 5}) });
       const data = await res.json();
       typingEl.remove();
       if (!res.ok) throw new Error(data.detail || 'Query failed');

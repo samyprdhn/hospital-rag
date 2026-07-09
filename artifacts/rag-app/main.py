@@ -8,11 +8,14 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Header, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import chromadb
+import sqlite3
+import secrets
+import hashlib
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -28,10 +31,156 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 CHROMA_PATH = "./chroma_db"
 Path(CHROMA_PATH).mkdir(parents=True, exist_ok=True)
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-collection = chroma_client.get_or_create_collection(
-    name="documents",
-    metadata={"hnsw:space": "cosine"},
-)
+
+# ── User Authentication Setup ──────────────────────────────────────────────────
+DB_PATH = Path(CHROMA_PATH) / "users.db"
+
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                salt TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )
+        """)
+        conn.commit()
+
+init_db()
+
+def hash_password(password: str, salt_hex: Optional[str] = None) -> tuple[str, str]:
+    if not salt_hex:
+        salt_hex = secrets.token_hex(16)
+    salt = bytes.fromhex(salt_hex)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000)
+    return key.hex(), salt_hex
+
+class UserSignUp(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class UserSignIn(BaseModel):
+    username: str
+    password: str
+
+class UserInfo(BaseModel):
+    id: str
+    username: str
+    email: str
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserInfo
+
+@app.post("/auth/signup", response_model=AuthResponse)
+def signup(req: UserSignUp):
+    if not req.username.strip() or not req.email.strip() or not req.password:
+        raise HTTPException(status_code=400, detail="All fields (username, email, password) are required.")
+    if len(req.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long.")
+
+    user_id = str(uuid.uuid4())
+    pw_hash, salt = hash_password(req.password)
+    token = secrets.token_hex(32)
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                "INSERT INTO users (id, username, email, password_hash, salt) VALUES (?, ?, ?, ?, ?)",
+                (user_id, req.username.strip().lower(), req.email.strip().lower(), pw_hash, salt)
+            )
+            conn.execute(
+                "INSERT INTO sessions (token, user_id) VALUES (?, ?)",
+                (token, user_id)
+            )
+            conn.commit()
+    except sqlite3.IntegrityError as e:
+        if "username" in str(e).lower() or "users.username" in str(e).lower():
+            raise HTTPException(status_code=400, detail="Username is already taken.")
+        if "email" in str(e).lower() or "users.email" in str(e).lower():
+            raise HTTPException(status_code=400, detail="Email is already registered.")
+        raise HTTPException(status_code=400, detail="Username or email already exists.")
+
+    return AuthResponse(
+        token=token,
+        user=UserInfo(id=user_id, username=req.username.strip(), email=req.email.strip().lower())
+    )
+
+@app.post("/auth/signin", response_model=AuthResponse)
+def signin(req: UserSignIn):
+    login_id = req.username.strip().lower()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            "SELECT id, username, email, password_hash, salt FROM users WHERE username = ? OR email = ?",
+            (login_id, login_id)
+        )
+        row = cursor.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    user_id, username, email, pw_hash, salt = row
+    check_hash, _ = hash_password(req.password, salt)
+    if check_hash != pw_hash:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    token = secrets.token_hex(32)
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))
+        conn.commit()
+
+    return AuthResponse(
+        token=token,
+        user=UserInfo(id=user_id, username=username, email=email)
+    )
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required. Please sign in or create an account.")
+    token = authorization.split("Bearer ", 1)[1].strip()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            """SELECT u.id, u.username, u.email FROM sessions s
+               JOIN users u ON s.user_id = u.id
+               WHERE s.token = ?""",
+            (token,)
+        )
+        row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid or expired authentication token. Please sign in again.")
+    return {"id": row[0], "username": row[1], "email": row[2]}
+
+@app.get("/auth/me", response_model=UserInfo)
+def get_me(current_user: dict = Depends(get_current_user)):
+    return UserInfo(**current_user)
+
+@app.post("/auth/signout")
+def signout(authorization: Optional[str] = Header(None)):
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ", 1)[1].strip()
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+            conn.commit()
+    return {"success": True}
+
+def get_user_collection(user_id: str):
+    safe_name = f"user_{user_id.replace('-', '_')}"
+    return chroma_client.get_or_create_collection(
+        name=safe_name,
+        metadata={"hnsw:space": "cosine"},
+    )
 
 # ── Parser registry ────────────────────────────────────────────────────────────
 PARSERS = {
@@ -399,9 +548,10 @@ def get_providers():
 
 
 @app.get("/documents")
-def list_documents():
+def list_documents(current_user: dict = Depends(get_current_user)):
     try:
-        results = collection.get(include=["metadatas"])
+        user_col = get_user_collection(current_user["id"])
+        results = user_col.get(include=["metadatas"])
         docs: dict[str, dict] = {}
         for meta in results["metadatas"]:
             fn = meta.get("filename", "unknown")
@@ -418,6 +568,7 @@ def list_documents():
 async def upload_document(
     file: UploadFile = File(...),
     parser: str = Form("llamaparse"),
+    current_user: dict = Depends(get_current_user),
 ):
     allowed = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".docx", ".txt"}
     suffix = Path(file.filename).suffix.lower()
@@ -445,8 +596,9 @@ async def upload_document(
             for i in range(len(chunks))
         ]
 
-        collection.add(documents=chunks, metadatas=metadatas, ids=ids)
-        logger.info(f"Stored {len(chunks)} chunks for {file.filename} via {parser_name}")
+        user_col = get_user_collection(current_user["id"])
+        user_col.add(documents=chunks, metadatas=metadatas, ids=ids)
+        logger.info(f"Stored {len(chunks)} chunks for {file.filename} via {parser_name} for user {current_user['username']}")
 
         return {
             "success": True,
@@ -474,14 +626,15 @@ class QueryRequest(BaseModel):
 
 
 @app.post("/query")
-async def query_documents(req: QueryRequest):
+async def query_documents(req: QueryRequest, current_user: dict = Depends(get_current_user)):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
     try:
-        results = collection.query(
+        user_col = get_user_collection(current_user["id"])
+        results = user_col.query(
             query_texts=[req.query],
-            n_results=min(req.top_k, collection.count() or 1),
+            n_results=min(req.top_k, user_col.count() or 1),
             include=["documents", "metadatas", "distances"],
         )
     except Exception as e:
@@ -498,22 +651,43 @@ async def query_documents(req: QueryRequest):
         [f"[Source: {m['filename']}, chunk {m['chunk_index']}]\n{d}" for d, m in zip(docs, metas)]
     )
 
-    prompt = f"""You are a medical document and billing assistant. Use the context below to answer the question.
-If the answer is not in the context, say you don't know.
+    prompt = f"""You are a medical document and billing assistant for a hospital system. Answer using ONLY the context below — never use outside medical knowledge to fill gaps.
 
-Currency rules (strictly follow these):
-- Always use the exact currency symbol and amount as it appears in the source document.
-- Do not convert, substitute, or guess the currency (e.g. do not replace R with $ or £).
-- If the document contains clues about its country of origin (e.g. country name, city, regulatory body, bank, insurer, phone format, address), infer the correct local currency from that country and use it consistently. Examples: South Africa → R (Rand), Nepal → Rs / रू (Nepali Rupee), India → ₹ (Rupee), UK → £ (Pound), USA → $ (Dollar), Europe → € (Euro), Kenya → KSh (Shilling).
-- If the currency symbol is genuinely absent and the country cannot be determined from the document, state "currency not specified in the document" rather than guessing.
-
-Context:
-{context}
-
-Question:
-{req.query}
-
-Answer clearly and concisely, and explain medical or billing terms if present."""
+    Scope and safety:
+    1. You are retrieving and explaining information that already exists in the patient's documents — you are NOT diagnosing, recommending treatment, or giving clinical advice. If asked something that requires clinical judgment beyond what's written (e.g. "should I take this medication," "is this dosage safe"), answer only with what the document states and add: "This is informational only — please confirm with a clinician."
+    2. Never infer a diagnosis, condition, or billing code that isn't explicitly stated in the context, even if symptoms or line items seem to imply one.
+    3. If the answer is not in the context, say "I don't know based on the provided document(s)." Do not guess.
+    
+    Accuracy requirements:
+    4. Reproduce all codes (ICD-10, CPT, HCPCS, NDC), dates, amounts, claim numbers, policy numbers, and provider/patient identifiers EXACTLY as written. Never round, reformat, recalculate, or auto-correct what looks like a typo.
+    5. When explaining a code, state the code as written, then its plain-language meaning if commonly known (e.g. "CPT 99213 — established patient office visit, low-to-moderate complexity"). If you're not certain what a specific code means, say so rather than guessing.
+    6. Briefly explain insurance/billing terms in plain language the first time they appear (e.g. deductible, co-pay, co-insurance, EOB, prior authorization, out-of-pocket max, allowed amount, adjustment).
+    7. If the question is about a resume, letter, or other non-medical document, just answer normally from the context — don't force a medical framing.
+    
+    Deduplication (important):
+    8. The context below may contain the same line item, fact, or statement repeated across multiple retrieved passages (e.g. the same charge appearing more than once due to how the document was split for search). Treat repeated occurrences of the same description, date, and amount as ONE fact. Do not list duplicates as if they were separate charges or separate events, and do not comment on the fact that retrieval returned duplicates.
+    9. Only flag something as a genuine discrepancy if two passages describe what looks like the same item/date but with DIFFERING amounts, codes, or details. In that case, show both versions and say they conflict.
+    
+    Handling multiple documents/encounters:
+    10. Hospital records often span multiple visits, claims, or providers. When it's useful for clarity — e.g. the question involves more than one date, claim, or document — attribute facts using natural references like the document name, visit date, or claim number (e.g. "per the 03/12/2026 visit note," "on claim #12345"). Do not reference internal retrieval or system details such as chunk numbers, chunk indices, or passage numbers — these are not meaningful to the reader.
+    11. For simple questions with one clear answer, just give the answer plainly — don't manufacture a source citation for every sentence if the whole answer comes from one obvious place.
+    12. If the source document contains a stated summary figure (e.g. "Total Due," "Balance," "Amount Payable"), use that stated figure directly rather than adding up individual line items yourself.
+    
+    Currency rules (strict):
+    - Use the exact currency symbol and amount as it appears in the source. Never convert or substitute (e.g. never replace R with $ or £).
+    - If no symbol is present, infer the currency from country/region clues in the document (country name, city, regulatory body, bank, insurer, phone format, address). Examples: South Africa → R, Nepal → Rs / रू, India → ₹, UK → £, USA → $, Eurozone → €, Kenya → KSh.
+    - If there's no symbol AND no locatable country clue, say "currency not specified in the document" instead of guessing.
+    
+    Privacy:
+    13. Only surface patient-identifying details (name, DOB, SSN, MRN, policy number) if they are directly relevant to answering the question — don't restate them unnecessarily.
+    
+    Context:
+    {context}
+    
+    Question:
+    {req.query}
+    
+    Answer clearly and concisely in plain, natural language. Attribute facts to their source (document/date/claim) only where it adds clarity — never mention chunks, passages, or retrieval mechanics."""
 
     logger.info(f"Calling {req.provider}/{req.model} for query: {req.query[:60]}...")
     answer = await call_llm(req.provider, req.model, prompt)
@@ -538,7 +712,7 @@ class IndexTextRequest(BaseModel):
 
 
 @app.post("/index-text")
-async def index_text(req: IndexTextRequest):
+async def index_text(req: IndexTextRequest, current_user: dict = Depends(get_current_user)):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="Text is empty — nothing to index.")
     if req.parser_key not in PARSERS:
@@ -554,8 +728,9 @@ async def index_text(req: IndexTextRequest):
         {"filename": req.filename, "chunk_index": i, "parser": parser_name}
         for i in range(len(chunks))
     ]
-    collection.add(documents=chunks, metadatas=metadatas, ids=ids)
-    logger.info(f"Indexed {len(chunks)} chunks for '{req.filename}' via {parser_name} (from compare)")
+    user_col = get_user_collection(current_user["id"])
+    user_col.add(documents=chunks, metadatas=metadatas, ids=ids)
+    logger.info(f"Indexed {len(chunks)} chunks for '{req.filename}' via {parser_name} for user {current_user['username']} (from compare)")
 
     return {
         "success": True,
@@ -570,6 +745,7 @@ async def compare_parsers(
     file: UploadFile = File(...),
     parser_a: str = Form(...),
     parser_b: str = Form(...),
+    current_user: dict = Depends(get_current_user),
 ):
     allowed = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".docx", ".txt"}
     suffix = Path(file.filename).suffix.lower()
@@ -647,13 +823,14 @@ async def compare_parsers(
 
 
 @app.delete("/documents/{filename}")
-def delete_document(filename: str):
+def delete_document(filename: str, current_user: dict = Depends(get_current_user)):
     try:
-        results = collection.get(where={"filename": filename}, include=["metadatas"])
+        user_col = get_user_collection(current_user["id"])
+        results = user_col.get(where={"filename": filename}, include=["metadatas"])
         ids = results["ids"]
         if not ids:
             raise HTTPException(status_code=404, detail="Document not found.")
-        collection.delete(ids=ids)
+        user_col.delete(ids=ids)
         return {"success": True, "deleted_chunks": len(ids)}
     except HTTPException:
         raise
